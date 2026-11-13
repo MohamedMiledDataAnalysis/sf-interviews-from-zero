@@ -1,7 +1,8 @@
 """Chapter 18, section 18.9: project the pool and the notes under CPR, CDR and severity,
 and build a WAL table for Class A."""
 import sys
-sys.stdout.reconfigure(errors="replace")  # print £ safely on any console
+if hasattr(sys.stdout, "reconfigure"):  # consoles only; notebooks print £ already
+    sys.stdout.reconfigure(errors="replace")
 import pandas as pd
 
 

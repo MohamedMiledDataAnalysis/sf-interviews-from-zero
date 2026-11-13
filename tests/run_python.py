@@ -21,6 +21,8 @@ def run(args, log):
 
 rows, bad = [], 0
 for f in sorted((ROOT / "python").glob("*.py")):
+    if f.name.startswith("test_"):
+        continue
     if f.name.startswith("ch18_09"):
         run(["sql/sqlite_version/build_db.py"], "build_db.log")   # ch18_09 reads the SQLite database
     r = run([str(f.relative_to(ROOT))], f"python_{f.stem}.log")
@@ -30,6 +32,11 @@ for f in sorted((ROOT / "python").glob("*.py")):
     bad += not ok
     last = (r.stderr.strip().splitlines() or [""])[-1][:100] if not ok else ""
     rows.append(f"| python/{f.name} | {'pass' if ok else 'FAIL'} | {last.replace('|', '/')} |")
+
+r = run(["-m", "pytest", "-q", "python"], "pytest.log")
+ok = r.returncode == 0
+bad += not ok
+rows.append(f"| python -m pytest python | {'pass' if ok else 'FAIL'} | {(r.stdout.strip().splitlines() or [''])[-1]} |")
 
 for f in sorted((ROOT / "sql" / "sqlite_version").glob("ch17_*.sql")):
     b = run(["sql/sqlite_version/build_db.py"], "build_db.log")
@@ -43,7 +50,8 @@ for f in sorted((ROOT / "sql" / "sqlite_version").glob("ch17_*.sql")):
     note = f"{len(errors)} errors, {expected} expected" + ("" if ok else f": {errors[:1]}")
     rows.append(f"| sql/sqlite_version/{f.name} | {'pass' if ok else 'FAIL'} | {note.replace('|', '/')} |")
 
-head = [f"# Python and SQLite run on {platform.system()} with Python {platform.python_version()}", "",
+import pandas
+head = [f"# Python and SQLite run on {platform.system()} with Python {platform.python_version()}, pandas {pandas.__version__}", "",
         "| Script | Result | Notes |", "|---|---|---|"]
 text = "\n".join(head + rows + ["", f"**Failures: {bad}**", ""])
 (OUT / f"PYTHON_REPORT_{platform.system()}.md").write_text(text, encoding="utf-8")

@@ -5,11 +5,11 @@ and prints the results. Usage (from the companion folder):
 Statements that fail are reported and the script continues; changes are saved."""
 import os, re, sqlite3, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
+if len(sys.argv) != 2:
+    sys.exit('Usage: python sql/sqlite_version/run_query.py <file.sql or "SELECT ...">')
 con = sqlite3.connect(os.path.join(HERE, 'ashcombe.db'))
 con.create_function('POWER', 2, pow)  # in case this SQLite build lacks maths functions
 con.execute('PRAGMA foreign_keys = ON')  # enforce foreign keys (Chapter 17, query 8.4)
-if len(sys.argv) != 2:
-    sys.exit('Usage: python sql/sqlite_version/run_query.py <file.sql or "SELECT ...">')
 arg = sys.argv[1]
 if arg.endswith('.sql'):
     with open(arg, encoding='utf-8') as f:

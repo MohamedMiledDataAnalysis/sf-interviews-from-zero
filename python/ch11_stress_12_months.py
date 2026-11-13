@@ -1,7 +1,8 @@
 """Chapter 11: a twelve-month stress of Ashcombe from its October 2026 position,
 running the Chapter 18 waterfall function month by month."""
 import sys
-sys.stdout.reconfigure(errors="replace")  # print £ safely on any console
+if hasattr(sys.stdout, "reconfigure"):  # consoles only; notebooks print £ already
+    sys.stdout.reconfigure(errors="replace")
 from ch18_05_waterfall import run_waterfall
 
 pool, a, b, reserve, pdl = 230_558_000, 196_958_000, 33_600_000, 2_163_148, 0

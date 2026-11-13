@@ -1,6 +1,7 @@
 """Chapter 18, section 18.6: the Ashcombe revenue and principal waterfall as a function."""
 import sys
-sys.stdout.reconfigure(errors="replace")  # print £ safely on any console
+if hasattr(sys.stdout, "reconfigure"):  # consoles only; notebooks print £ already
+    sys.stdout.reconfigure(errors="replace")
 
 
 def run_waterfall(pool, class_a, class_b, reserve, revenue, principal, losses,

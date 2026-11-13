@@ -6,3 +6,4 @@ __pycache__/
 ~$*.xlsx
 .venv/
 tests/output/
+.pytest_cache/

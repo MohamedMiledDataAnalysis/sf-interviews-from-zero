@@ -1,7 +1,8 @@
 """Chapter 0: checks that Python, pandas and the companion files work.
 Run from the companion folder:  python python/00_check_setup.py"""
 import sys
-sys.stdout.reconfigure(errors="replace")  # print £ safely on any console
+if hasattr(sys.stdout, "reconfigure"):  # consoles only; notebooks print £ already
+    sys.stdout.reconfigure(errors="replace")
 from pathlib import Path
 import pandas as pd
 

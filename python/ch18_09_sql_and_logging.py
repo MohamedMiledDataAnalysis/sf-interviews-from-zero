@@ -1,6 +1,7 @@
 """Chapter 18, section 18.10: read from a database with SQL, log each step, stop on a failed check."""
 import sys
-sys.stdout.reconfigure(errors="replace")  # print £ safely on any console
+if hasattr(sys.stdout, "reconfigure"):  # consoles only; notebooks print £ already
+    sys.stdout.reconfigure(errors="replace")
 import logging
 import sqlite3
 from pathlib import Path

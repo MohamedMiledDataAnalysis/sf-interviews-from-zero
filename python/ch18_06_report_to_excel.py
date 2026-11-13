@@ -1,6 +1,7 @@
 """Chapter 18, section 18.7: write a small monthly pack to Excel, with a chart image."""
 import sys
-sys.stdout.reconfigure(errors="replace")  # print £ safely on any console
+if hasattr(sys.stdout, "reconfigure"):  # consoles only; notebooks print £ already
+    sys.stdout.reconfigure(errors="replace")
 from pathlib import Path
 import pandas as pd
 import matplotlib
