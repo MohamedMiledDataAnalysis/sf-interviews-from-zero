@@ -1,0 +1,75 @@
+name: Test every companion file (SQL Server, SQLite, Python, Excel)
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  sql-server:
+    name: SQL Server 2025 scripts
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - name: Run all SQL Server scripts and check the book's numbers (SQL Server 2025 in Docker)
+        run: bash tests/run_all.sh
+        env:
+          FULL_LOGS: "1"
+      - name: Publish the report
+        if: always()
+        run: cat tests/output/REPORT.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: sql-server-output
+          path: tests/output
+
+  python-sqlite:
+    name: Python and SQLite on ${{ matrix.os }}, Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        python: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install the packages in requirements.txt
+        run: python -m pip install -r requirements.txt
+      - name: Run every Python script and every SQLite script
+        run: python tests/run_python.py
+      - name: Publish the report
+        if: always()
+        shell: bash
+        run: cat tests/output/PYTHON_REPORT_*.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: python-output-${{ matrix.os }}-${{ matrix.python }}
+          path: tests/output
+
+  excel:
+    name: Excel workbooks (recalculated in LibreOffice)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Install LibreOffice and openpyxl
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends libreoffice-calc
+          python -m pip install "openpyxl>=3.1"
+      - name: Recalculate every workbook and compare with the book
+        run: python tests/check_excel.py
+      - name: Publish the report
+        if: always()
+        run: cat tests/output/EXCEL_REPORT.md >> "$GITHUB_STEP_SUMMARY"
