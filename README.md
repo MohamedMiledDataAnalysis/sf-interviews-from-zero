@@ -33,19 +33,13 @@ python sql/sqlite_version/run_query.py sql/sqlite_version/ch17_02_aggregates.sql
 python sql/sqlite_version/run_query.py "SELECT COUNT(*) FROM loan_tape"
 ```
 
-## Tested on every push
+## Tested on SQL Server
 
-The workflow `.github/workflows/test-companion.yml` tests every file in this repository each time it changes. Results appear on the run's summary page in the **Actions** tab.
+Every SQL Server script in `sql/` runs on SQL Server 2025 each time this repository changes. The workflow `.github/workflows/run-sql.yml` starts SQL Server in Docker, builds the `ashcombe` database from `data/`, runs `00_setup.sql` and each `ch17_*.sql` script on a fresh database, then runs `tests/checks.sql`, which compares the results with the numbers printed in the book. The report appears on the run's summary page in the **Actions** tab.
 
-| Test | What it does | Script |
-|---|---|---|
-| SQL Server 2025 | Starts SQL Server in Docker, builds the `ashcombe` database from `data/`, runs `00_setup.sql` and each `ch17_*.sql` on a fresh database, then compares the results with the numbers printed in the book (`tests/checks.sql`) | `tests/run_all.sh` |
-| Python and SQLite | Runs every script in `python/` and every SQLite script, on Windows, macOS and Linux, with Python 3.11 and 3.13 | `tests/run_python.py` |
-| Excel | Removes every stored result from each workbook, recalculates every formula in LibreOffice, and fails on any error value or any result that differs from the book | `tests/check_excel.py` |
+`ch17_08_keys_indexes.sql` fails twice on purpose (queries 8.1 and 8.4); `tests/expected_messages.txt` lists those error numbers so the run does not count them.
 
-`ch17_08_keys_indexes.sql` fails on purpose at queries 8.1 and 8.4, in both SQL Server and SQLite; the tests expect exactly those errors (`tests/expected_messages.txt`).
-
-To run a test on your own computer, from this folder: `python tests/run_python.py`, `python tests/check_excel.py` (LibreOffice required) or `bash tests/run_all.sh` (Docker required).
+To run the same test on your own computer (Docker required): `bash tests/run_all.sh`
 
 ## Corrections
 

@@ -65,3 +65,29 @@ SELECT j.loan_id, j.current_balance, m.arrears_months AS may_arrears, j.arrears_
 FROM dbo.loan_history AS j
 JOIN dbo.loan_history AS m ON m.loan_id = j.loan_id AND m.month_end = '2026-05-31'
 WHERE j.month_end = '2026-06-30' AND j.arrears_months >= 3 AND m.arrears_months < 3;
+
+-- 9.6 Consecutive months in arrears: runs of 3 months or more ("gaps and islands")
+WITH a AS (
+    SELECT loan_id, month_end, arrears_months,
+           ROW_NUMBER() OVER (PARTITION BY loan_id ORDER BY month_end)
+         - ROW_NUMBER() OVER (PARTITION BY loan_id,
+                              CASE WHEN arrears_months > 0 THEN 1 ELSE 0 END
+                              ORDER BY month_end) AS grp
+    FROM dbo.loan_history WHERE status = 'Active'
+)
+SELECT loan_id, MIN(month_end) AS run_start, MAX(month_end) AS run_end,
+       COUNT(*) AS months
+FROM a WHERE arrears_months > 0
+GROUP BY loan_id, grp
+HAVING COUNT(*) >= 3
+ORDER BY months DESC, loan_id;
+
+-- 9.7 Performance by vintage (year of origination)
+SELECT YEAR(origination_date) AS vintage, COUNT(*) AS loans,
+       SUM(current_balance) AS balance,
+       ROUND(100.0 * SUM(CASE WHEN arrears_months >= 3
+                              THEN current_balance ELSE 0 END)
+             / SUM(current_balance), 2) AS pct_3plus
+FROM dbo.loan_tape
+GROUP BY YEAR(origination_date)
+ORDER BY vintage;
