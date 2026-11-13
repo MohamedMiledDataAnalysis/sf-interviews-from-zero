@@ -7,3 +7,5 @@ __pycache__/
 .venv/
 tests/output/
 .pytest_cache/
+tests/openxml/bin/
+tests/openxml/obj/

@@ -82,3 +82,25 @@ jobs:
       - name: Publish the report
         if: always()
         run: cat tests/output/EXCEL_REPORT.md >> "$GITHUB_STEP_SUMMARY"
+
+  excel-second-checks:
+    name: Excel workbooks (Open XML SDK and a second calculation engine)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "8.0.x"
+      - name: Check every workbook against Microsoft's Open XML schema
+        run: dotnet run --project tests/openxml -- excel
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install the second calculation engine
+        run: python -m pip install "formulas>=1.2" "openpyxl>=3.1"
+      - name: Recalculate every formula with the second engine and compare with the book
+        run: python tests/check_excel_formulas.py
+      - name: Publish the reports
+        if: always()
+        run: cat tests/output/OPENXML_REPORT.md tests/output/EXCEL_ENGINE2_REPORT.md >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
