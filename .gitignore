@@ -11,3 +11,9 @@ tests/openxml/bin/
 tests/openxml/obj/
 tests/openxml/bin/
 tests/openxml/obj/
+
+# The book itself is never published here
+*.pdf
+*.epub
+*.mobi
+*.docx
