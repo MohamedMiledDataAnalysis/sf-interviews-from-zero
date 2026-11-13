@@ -8,7 +8,7 @@ OUT="$ROOT/tests/output"
 C=ashcombe-test
 PW="${SA_PASSWORD:-Ashcombe#Test2026}"
 IMAGE="${IMAGE:-mcr.microsoft.com/mssql/server:2025-latest}"
-IMPORT=/var/opt/mssql/data/import
+IMPORT=/tmp
 rm -rf "$OUT"; mkdir -p "$OUT/logs" "$OUT/work"
 
 echo "Starting $IMAGE ..."
@@ -26,9 +26,7 @@ done
 [ -n "$TOOLS" ] || { echo "sqlcmd not found in the image"; exit 2; }
 docker exec $C $TOOLS/sqlcmd -S localhost -U sa -P "$PW" -C -h -1 -Q "SET NOCOUNT ON; SELECT @@VERSION" | head -1 | tee "$OUT/version.txt"
 
-docker exec -u 0 $C mkdir -p $IMPORT
 docker cp "$ROOT/data/." $C:$IMPORT/
-docker exec -u 0 $C chown -R mssql $IMPORT
 
 sql() {  # sql <file> <log>
   docker cp "$1" $C:/tmp/run.sql
@@ -54,13 +52,23 @@ run_one() {  # run_one <script path> <chapter key>
   echo "Running $name ..."
   sql "$OUT/work/$name.sql" "$OUT/logs/$name.log"
   allowed=$(grep -E "^$key " "$ROOT/tests/expected_messages.txt" 2>/dev/null | cut -d' ' -f2- | tr ' ' '|')
-  errs=$(grep -E "^Msg [0-9]+, Level 1[1-9]|Sqlcmd: Error" "$OUT/logs/$name.log" || true)
+  errs=$(grep -E "^Msg [0-9]+, Level (1[1-9]|2[0-5])|Sqlcmd: Error" "$OUT/logs/$name.log" || true)
   exp=0
   if [ -n "$allowed" ]; then
     exp=$(printf '%s\n' "$errs" | grep -cE "^Msg ($allowed)," || true)
     errs=$(printf '%s\n' "$errs" | grep -vE "^Msg ($allowed)," || true)
   fi
   n=$(printf '%s' "$errs" | grep -c "^Msg\|^Sqlcmd" || true)
+  need=$(grep -E "^$key " "$ROOT/tests/expected_messages.txt" 2>/dev/null | awk '{print NF-1}')
+  if [ -n "$need" ] && [ "$exp" -ne "$need" ]; then
+    n=$((n+1)); errs="expected $need planned errors (Msg ${allowed//|/, }), got $exp"
+  fi
+  if [ -f "$ROOT/tests/after_$name.sql" ]; then
+    sql "$ROOT/tests/after_$name.sql" "$OUT/logs/after_$name.log"
+    if ! grep -q "ALL CHECKS PASSED" "$OUT/logs/after_$name.log"; then
+      n=$((n+1)); errs="after_$name.sql: checks failed"
+    fi
+  fi
   first=""
   if [ "$n" -gt 0 ]; then first=$(printf '%s\n' "$errs" | head -1 | cut -c1-120); fi
   TOTAL=$((TOTAL + n))
@@ -80,9 +88,9 @@ grep -q "ALL CHECKS PASSED" "$OUT/logs/checks.log" || { echo "| checks | numbers
 { echo; echo "**Unexpected errors in total: $TOTAL**"; echo
   echo "## Error details"; echo
   for lg in "$OUT"/logs/*.log; do
-    if grep -qE "^Msg [0-9]+, Level 1[1-9]|Sqlcmd: Error" "$lg"; then
+    if grep -qE "^Msg [0-9]+, Level (1[1-9]|2[0-5])|Sqlcmd: Error" "$lg"; then
       echo "### $(basename "$lg" .log)"; echo '```'
-      grep -E -A4 "^Msg [0-9]+, Level 1[1-9]|Sqlcmd: Error" "$lg" | head -30
+      grep -E -A4 "^Msg [0-9]+, Level (1[1-9]|2[0-5])|Sqlcmd: Error" "$lg" | head -30
       echo '```'; echo
     fi
   done; } >> "$REPORT"

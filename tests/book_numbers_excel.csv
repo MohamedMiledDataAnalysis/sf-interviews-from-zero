@@ -1,0 +1,118 @@
+workbook,sheet,cell,expected,decimals,where in the book
+ch16_excel_workbook.xlsx,Metrics,B2,1200,0,Ch16 SUM and COUNT
+ch16_excel_workbook.xlsx,Metrics,B3,240000000,0,Ch16 SUM and COUNT
+ch16_excel_workbook.xlsx,Metrics,B4,200000,0,Ch16 SUM and COUNT
+ch16_excel_workbook.xlsx,Metrics,B5,840940,0,Ch16 SUM and COUNT
+ch16_excel_workbook.xlsx,Metrics,B6,43126,0,Ch16 SUM and COUNT
+ch16_excel_workbook.xlsx,Metrics,B7,0.05444,5,Ch16 SUMPRODUCT (5.444%)
+ch16_excel_workbook.xlsx,Metrics,B8,0.692,3,Ch16 Correction 1 (69.2%)
+ch16_excel_workbook.xlsx,Metrics,B12,46245021,0,Ch16 SUMIFS
+ch16_excel_workbook.xlsx,Metrics,B14,24,0,Ch16 COUNTIFS
+ch16_excel_workbook.xlsx,Metrics,B15,4648983,0,Ch16 SUMIFS
+ch16_excel_workbook.xlsx,Metrics,B16,0.0194,4,Ch16 and Ch21 (1.94%)
+ch16_excel_workbook.xlsx,Metrics,B17,9336457,0,Ch16 SUMIFS
+ch16_excel_workbook.xlsx,Metrics,B19,0,0,Ch16 control total check
+ch16_excel_workbook.xlsx,Strats,D3,325,0,Ch16 strat
+ch16_excel_workbook.xlsx,Strats,E3,63960160,0,Ch16 strat
+ch16_excel_workbook.xlsx,Strats,D10,0,0,Ch16 strat check
+ch16_excel_workbook.xlsx,Strats,E10,0,0,Ch16 strat check
+ch16_excel_workbook.xlsx,Strats,F23,0.1624,4,Ch20 London share
+ch16_excel_workbook.xlsx,Lookup,B5,0.537,3,Ch16 lookups
+ch16_excel_workbook.xlsx,Lookup,B10,1,0,Ch16 lookups
+ch16_excel_workbook.xlsx,Waterfall,B27,39877,0,Ch9 and Ch16 excess spread
+ch16_excel_workbook.xlsx,Waterfall,B28,2163148,0,Ch9 and Ch16 closing reserve
+ch16_excel_workbook.xlsx,Waterfall,C39,196958000,0,Ch9 closing Class A
+ch16_excel_workbook.xlsx,Waterfall,C44,0,0,Ch16 check
+ch16_excel_workbook.xlsx,Waterfall,C45,0,0,Ch16 check
+ch16_excel_workbook.xlsx,Waterfall,C46,0,0,Ch16 check
+ch16_excel_workbook.xlsx,Dates,C8,35,0,Ch7 and Ch16 first period (30/360)
+ch16_excel_workbook.xlsx,Dates,C9,30,0,Ch16 dates
+ch16_excel_workbook.xlsx,Dates,E8,903000,0,Ch7 first Class A interest
+ch16_excel_workbook.xlsx,Dates,E9,774000,0,Ch7 normal Class A interest
+ch16_excel_workbook.xlsx,Dates,B26,859.50,2,Ch2 and Ch16 PMT
+ch16_excel_workbook.xlsx,Movements,E7,293,0,Ch16 No principal
+ch16_excel_workbook.xlsx,RollRate,B4,1083,0,Ch16 and Ch17 roll rates
+ch16_excel_workbook.xlsx,RollRate,C4,37,0,Ch16 and Ch17 roll rates
+ch16_excel_workbook.xlsx,RollRate,D5,18,0,Ch16 and Ch17 roll rates
+ch16_excel_workbook.xlsx,RollRate,F8,1200,0,Ch16 roll rates total
+ch16_excel_workbook.xlsx,RollRate,B12,0.318,3,Ch16 cure rate 31.8%
+ch16_excel_workbook.xlsx,RollRate,D12,0.409,3,Ch16 roll to 2 months 40.9%
+ch16_excel_workbook.xlsx,Projection,F5,4.91,2,Ch16 WAL at 10% CPR
+ch16_excel_workbook.xlsx,Projection,F6,1590000,-4,Ch16 lifetime losses £1.59m
+test1_solution.xlsx,Test 1,C36,33125,0,Ch19 excess spread month 1
+test1_solution.xlsx,Test 1,C38,1790000,0,Ch19 available principal
+test1_solution.xlsx,Test 1,G52,196218,0,Ch19 PDL month 2
+test1_solution.xlsx,Test 1,K52,1600000,0,Ch19 no-reserve PDL
+test1_solution.xlsx,Test 1,C41,0.091,3,Ch19 CPR month 1
+test1_solution.xlsx,Test 1,G41,0.104,3,Ch19 CPR month 2
+test1_solution.xlsx,Test 1,G42,0.0113,4,Ch19 cumulative losses (trigger)
+test2_solution.xlsx,Answers,B5,1200,0,Ch20 Q1
+test2_solution.xlsx,Answers,B6,1199,0,Ch20 Q1 distinct IDs
+test2_solution.xlsx,Answers,C6,1200,0,Ch20 Q1
+test2_solution.xlsx,Answers,B7,240000000,0,Ch20 Q1
+test2_solution.xlsx,Answers,B10,3,0,Ch20 Q2
+test2_solution.xlsx,Answers,B11,1,0,Ch20 Q2
+test2_solution.xlsx,Answers,B19,3,0,Ch20 Q3 region rule
+test2_solution.xlsx,Answers,B22,0.05444,5,Ch20 Q4 WA rate as reported
+test2_solution.xlsx,Answers,C22,0.05400,5,Ch20 Q4 WA rate corrected
+test2_solution.xlsx,Answers,B23,0.60333,5,Ch20 Q4 WA ILTV as reported
+test2_solution.xlsx,Answers,C23,0.60317,5,Ch20 Q4 WA ILTV corrected
+test2_solution.xlsx,Answers,B24,0.1615,4,Ch20 Q4 London as reported
+test2_solution.xlsx,Answers,C24,0.1642,4,Ch20 Q4 London cleaned
+test2_solution.xlsx,Answers,B25,0.0194,4,Ch20 Q4 3+ arrears
+test3_solution.xlsx,3 Pivot,K17,40,0,Ch21 Task 3 total
+test3_solution.xlsx,3 Pivot,H17,29,0,Ch21 Task 3 Fixed
+test3_solution.xlsx,3 Pivot,I17,6,0,Ch21 Task 3 SVR
+test3_solution.xlsx,3 Pivot,J17,5,0,Ch21 Task 3 Tracker
+test3_solution.xlsx,3 Pivot,K19,0,0,Ch21 Task 3 check
+test3_solution.xlsx,5 VLOOKUP,E44,Not mapped,,Ch21 Task 5
+test3_solution.xlsx,5 VLOOKUP,E46,1,0,Ch21 Task 5
+test3_solution.xlsx,5 VLOOKUP,E47,672585,0,Ch21 Task 5
+test3_solution.xlsx,6 HLOOKUP,K5,3,0,Ch21 Task 6
+test3_solution.xlsx,6 HLOOKUP,K6,0,0,Ch21 Task 6
+test3_solution.xlsx,6 HLOOKUP,K7,0,0,Ch21 Task 6
+test3_solution.xlsx,6 HLOOKUP,K8,2,0,Ch21 Task 6
+test3_solution.xlsx,6 HLOOKUP,K9,1,0,Ch21 Task 6
+test3_solution.xlsx,7 SUMIFS,H17,9294430,0,Ch21 Task 7
+test3_solution.xlsx,7 SUMIFS,I17,7115395,0,Ch21 Task 7
+test3_solution.xlsx,7 SUMIFS,J17,1297739,0,Ch21 Task 7
+test3_solution.xlsx,7 SUMIFS,K17,881296,0,Ch21 Task 7
+test3_solution.xlsx,7 SUMIFS,H18,0,0,Ch21 Task 7 check
+test3_solution.xlsx,7 SUMIFS,K18,0,0,Ch21 Task 7 check
+test3_solution.xlsx,8 COUNTIFS,I5,33,0,Ch21 Task 8
+test3_solution.xlsx,8 COUNTIFS,J5,7337873,0,Ch21 Task 8
+test3_solution.xlsx,8 COUNTIFS,I6,2,0,Ch21 Task 8
+test3_solution.xlsx,8 COUNTIFS,J6,436214,0,Ch21 Task 8
+test3_solution.xlsx,8 COUNTIFS,I7,2,0,Ch21 Task 8
+test3_solution.xlsx,8 COUNTIFS,J7,720983,0,Ch21 Task 8
+test3_solution.xlsx,8 COUNTIFS,I8,3,0,Ch21 Task 8
+test3_solution.xlsx,8 COUNTIFS,J8,799360,0,Ch21 Task 8
+test3_solution.xlsx,8 COUNTIFS,I9,40,0,Ch21 Task 8
+test3_solution.xlsx,8 COUNTIFS,I10,0,0,Ch21 Task 8 check
+test3_solution.xlsx,8 COUNTIFS,I12,7,0,Ch21 Task 8
+test3_solution.xlsx,9 IF and bands,K5,13,0,Ch21 Task 9
+test3_solution.xlsx,9 IF and bands,K6,11,0,Ch21 Task 9
+test3_solution.xlsx,9 IF and bands,K7,4,0,Ch21 Task 9
+test3_solution.xlsx,9 IF and bands,K8,7,0,Ch21 Task 9
+test3_solution.xlsx,9 IF and bands,K9,5,0,Ch21 Task 9
+test3_solution.xlsx,9 IF and bands,K11,0,0,Ch21 Task 9 check
+test3_solution.xlsx,9 IF and bands,K13,5,0,Ch21 Task 9
+test3_solution.xlsx,10 ROUND,H5,9295,0,Ch21 Task 10
+test3_solution.xlsx,10 ROUND,H6,9294,0,Ch21 Task 10
+test3_solution.xlsx,10 ROUND,H7,1,0,Ch21 Task 10
+test3_solution.xlsx,11 RANK,G5,ASH100063,,Ch21 Task 11
+test3_solution.xlsx,11 RANK,H5,527026,0,Ch21 Task 11
+test3_solution.xlsx,11 RANK,G14,ASH100175,,Ch21 Task 11
+test3_solution.xlsx,11 RANK,H14,308246,0,Ch21 Task 11
+test3_solution.xlsx,11 RANK,I15,0.424,3,Ch21 Task 11 top 10 share
+test3_solution.xlsx,12 Dashboard,B6,9294430,0,Ch21 Task 12
+test3_solution.xlsx,12 Dashboard,B7,0.5782,4,Ch21 Task 12
+test3_solution.xlsx,12 Dashboard,B8,0.0567,4,Ch21 Task 12
+test3_solution.xlsx,12 Dashboard,B9,0.0860,4,Ch21 Task 12
+test3_solution.xlsx,12 Dashboard,D7,Green,,Ch21 Task 12
+test3_solution.xlsx,12 Dashboard,D8,Amber,,Ch21 Task 12
+test3_solution.xlsx,12 Dashboard,D9,Red,,Ch21 Task 12
+test3_solution.xlsx,4 Chart,B5,255.41,2,Ch21 Task 4 chart title
+test3_solution.xlsx,4 Chart,B10,240,2,Ch21 Task 4 chart title
+test3_solution.xlsx,4 Chart,C5,0.0074,4,Ch21 Task 4 chart title
+test3_solution.xlsx,4 Chart,C10,0.0194,4,Ch21 Task 4 chart title

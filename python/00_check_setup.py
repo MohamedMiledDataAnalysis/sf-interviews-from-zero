@@ -12,6 +12,9 @@ tape = pd.read_csv(DATA / "ashcombe_loan_tape.csv")
 print(f"Loans: {len(tape):,}")
 print(f"Pool balance: £{tape['current_balance'].sum():,.0f}")
 print(f"pandas {pd.__version__}")
-if tuple(int(x) for x in pd.__version__.split(".")[:2]) < (2, 2):
+ok = len(tape) == 1200 and round(tape["current_balance"].sum()) == 240_000_000
+old = tuple(int(x) for x in pd.__version__.split(".")[:2]) < (2, 2)
+if old:
     print("Please upgrade pandas: python -m pip install -r requirements.txt")
-print("Setup OK" if len(tape) == 1200 else "Something is wrong: expected 1,200 loans")
+print("Setup OK" if ok and not old
+      else "Something is wrong: see the message above, or expected 1,200 loans and £240,000,000")

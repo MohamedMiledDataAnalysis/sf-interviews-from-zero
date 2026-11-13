@@ -6,15 +6,20 @@ on:
 
 jobs:
   sql-server:
-    name: SQL Server 2025 scripts
+    name: SQL Server ${{ matrix.image }} scripts
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ["2025-latest", "2022-latest", "2019-latest", "2017-latest"]
     steps:
       - uses: actions/checkout@v5
       - name: Run all SQL Server scripts and check the book's numbers (SQL Server 2025 in Docker)
         run: bash tests/run_all.sh
         env:
           FULL_LOGS: "1"
+          IMAGE: mcr.microsoft.com/mssql/server:${{ matrix.image }}
       - name: Publish the report
         if: always()
         run: cat tests/output/REPORT.md >> "$GITHUB_STEP_SUMMARY"
@@ -22,7 +27,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v5
         with:
-          name: sql-server-output
+          name: sql-server-output-${{ matrix.image }}
           path: tests/output
 
   python-sqlite:
@@ -66,7 +71,7 @@ jobs:
   excel:
     name: Excel workbooks (recalculated in LibreOffice)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -79,12 +84,18 @@ jobs:
           python -m pip install "openpyxl>=3.1"
       - name: Recalculate every workbook and compare with the book
         run: python tests/check_excel.py
+      - name: Check every Excel number printed in the book (saved and recalculated values)
+        if: always()
+        run: python tests/check_book_numbers.py
+      - name: Change inputs and check the results move as the book says (WAL, CDR grid, stress, Test 3)
+        if: always()
+        run: python tests/check_excel_scenarios.py
       - name: Check the lists, colour rules, chart and links saved in the files
         if: always()
         run: python tests/check_excel_features.py
       - name: Publish the reports
         if: always()
-        run: cat tests/output/EXCEL_REPORT.md tests/output/EXCEL_FEATURES_REPORT.md >> "$GITHUB_STEP_SUMMARY"
+        run: cat tests/output/EXCEL_REPORT.md tests/output/BOOK_NUMBERS_REPORT.md tests/output/EXCEL_SCENARIOS_REPORT.md tests/output/EXCEL_FEATURES_REPORT.md >> "$GITHUB_STEP_SUMMARY" || true
 
   excel-second-checks:
     name: Excel workbooks (Open XML SDK and a second calculation engine)

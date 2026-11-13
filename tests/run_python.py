@@ -33,7 +33,7 @@ for f in sorted((ROOT / "python").glob("*.py")):
     last = (r.stderr.strip().splitlines() or [""])[-1][:100] if not ok else ""
     rows.append(f"| python/{f.name} | {'pass' if ok else 'FAIL'} | {last.replace('|', '/')} |")
 
-r = run(["-m", "pytest", "-q", "python"], "pytest.log")
+r = run(["-m", "pytest", "-q", "-W", "error::FutureWarning", "-W", "error::DeprecationWarning", "python"], "pytest.log")
 ok = r.returncode == 0
 bad += not ok
 rows.append(f"| python -m pytest python | {'pass' if ok else 'FAIL'} | {(r.stdout.strip().splitlines() or [''])[-1]} |")
@@ -49,6 +49,13 @@ for f in sorted((ROOT / "sql" / "sqlite_version").glob("ch17_*.sql")):
     bad += not ok
     note = f"{len(errors)} errors, {expected} expected" + ("" if ok else f": {errors[:1]}")
     rows.append(f"| sql/sqlite_version/{f.name} | {'pass' if ok else 'FAIL'} | {note.replace('|', '/')} |")
+
+b = run(["sql/sqlite_version/build_db.py"], "build_db.log")
+r = run(["tests/check_sqlite.py"], "check_sqlite.log")
+ok = r.returncode == 0 and "ALL SQLITE CHECKS PASSED" in r.stdout
+bad += not ok
+fails = [l for l in r.stdout.splitlines() if l.startswith("FAIL")]
+rows.append(f"| tests/check_sqlite.py | {'pass' if ok else 'FAIL'} | {(fails[0] if fails else 'every SQLite number the book prints').replace('|', '/')} |")
 
 import pandas
 head = [f"# Python and SQLite run on {platform.system()} with Python {platform.python_version()}, pandas {pandas.__version__}", "",

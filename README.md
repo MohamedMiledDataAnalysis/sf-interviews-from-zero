@@ -11,7 +11,7 @@ Chapter 0 of the book walks through every step. In short:
 1. Download this repository (green **Code** button → **Download ZIP**) and extract it, or `git clone` it.
 2. Open `excel/ch16_excel_workbook.xlsx` and check that `=SUM(Tape!H2:H1201)` gives 240,000,000.
 3. SQL Server 2017 or later: copy the four CSV files from `data/` (all except `ashcombe_deal_inputs.csv`) to `C:\temp\` and run `sql/00_setup.sql`. No SQL Server? Run `python sql/sqlite_version/build_db.py` instead.
-4. Python 3.12 or later: from this folder, `python -m venv .venv`, switch it on (`.venv\Scripts\activate` on Windows, `source .venv/bin/activate` on macOS), then `python -m pip install -r requirements.txt` and `python python/00_check_setup.py`. It should print **Setup OK**. Tested with pandas 2.2 to 3.1.
+4. Python 3.11 or later: from this folder, `python -m venv .venv`, switch it on (`.venv\Scripts\activate` on Windows, `source .venv/bin/activate` on macOS), then `python -m pip install -r requirements.txt` and `python python/00_check_setup.py`. It should print **Setup OK**. Tested with pandas 2.2 to 3.1.
 
 ## What is inside
 
@@ -19,7 +19,7 @@ Chapter 0 of the book walks through every step. In short:
 |---|---|---|
 | `data/` | `ashcombe_loan_tape.csv` (1,200 loans), `servicer_balances.csv`, `ashcombe_loan_history.csv` (7,426 rows), `ashcombe_periods.csv`, `ashcombe_deal_inputs.csv` | 9–20 |
 | `excel/` | `ch16_excel_workbook.xlsx`; `test1_blank.xlsx` and `test1_solution.xlsx`; `test2_blank.xlsx` and `test2_solution.xlsx`; `test3_blank.xlsx` and `test3_solution.xlsx` (the timed Excel skills test) | 16, 19, 20, 21 |
-| `sql/` | `00_setup.sql`; `ch17_01` to `ch17_10` query scripts (SQL Server) | 0, 17 |
+| `sql/` | `00_setup.sql`; `ch17_01` to `ch17_10` query scripts (SQL Server); `ch17_11` the SQL for Practice test 2, question 4 | 0, 17, 20 |
 | `sql/sqlite_version/` | The same queries for SQLite; `build_db.py` and `run_query.py` | 0, 17 |
 | `python/` | `00_check_setup.py`; `ch18_01` to `ch18_09` scripts; `ch11_stress_12_months.py` | 0, 11, 18 |
 
@@ -39,9 +39,11 @@ The workflow `.github/workflows/test-companion.yml` tests every file in this rep
 
 | Test | What it does | Script |
 |---|---|---|
-| SQL Server 2025 | Starts SQL Server in Docker, builds the `ashcombe` database from `data/`, runs `00_setup.sql` and each `ch17_*.sql` on a fresh database, then compares the results with the numbers printed in the book (`tests/checks.sql`) | `tests/run_all.sh` |
-| Python and SQLite | Runs every script in `python/` and every SQLite script, on Windows, macOS and Linux, with Python 3.11 and 3.13 | `tests/run_python.py` |
+| SQL Server 2017, 2019, 2022 and 2025 | Starts SQL Server in Docker, builds the `ashcombe` database from `data/`, runs `00_setup.sql` and each `ch17_*.sql` on a fresh database, then compares the results with the numbers printed in the book (`tests/checks.sql`, and `tests/after_*.sql` after the scripts that create objects) | `tests/run_all.sh` |
+| Python and SQLite | Runs every script in `python/` and every SQLite script, on Windows, macOS and Linux, with Python 3.11, 3.13 and 3.15 and the latest pandas, plus pandas 2.2 on Python 3.11; warnings count as failures; `python/test_book_numbers.py` checks the numbers the book prints from Python, and `tests/check_sqlite.py` the SQLite results | `tests/run_python.py` |
 | Excel | Removes every stored result from each workbook, recalculates every formula in LibreOffice, and fails on any error value or any result that differs from the book | `tests/check_excel.py` |
+| Excel numbers in the book | Compares 117 numbers the book prints with the saved and the recalculated value of each cell | `tests/check_book_numbers.py` |
+| Excel scenarios | Changes inputs (CPR, CDR, losses, Test 3 data and limits) and checks the results move as the book says | `tests/check_excel_scenarios.py` |
 | Excel features | Checks the drop-down lists, colour rules, chart axes and links saved in Practice test 3, and that the blank version holds no answers | `tests/check_excel_features.py` |
 | Excel file format | Validates every workbook with Microsoft's Open XML SDK against the Office 2019 rules Excel applies when it opens a file | `tests/openxml/` |
 | Excel, second engine | Recalculates every formula again with a different engine (the Python package `formulas`) and compares with the book | `tests/check_excel_formulas.py` |

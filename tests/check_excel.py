@@ -33,6 +33,8 @@ for book in sorted((ROOT / "excel").glob("*.xlsx")):
         subprocess.run([SOFFICE, "--headless", f"-env:UserInstallation=file://{tmp}/profile",
                         "--convert-to", "xlsx", "--outdir", str(out), str(stripped)],
                        check=True, capture_output=True, timeout=300)
+        keep = ROOT / "tests" / "output" / "recalculated"; keep.mkdir(parents=True, exist_ok=True)
+        shutil.copy(out / book.name, keep / book.name)
         formulas = load_workbook(stripped)
         calc = load_workbook(out / book.name, data_only=True)
         n = errs = diffs = 0
