@@ -60,7 +60,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v5
         with:
-          name: python-output-${{ matrix.os }}-${{ matrix.python }}-${{ matrix.pandas }}
+          name: python-output-${{ strategy.job-index }}
           path: tests/output
 
   excel:
