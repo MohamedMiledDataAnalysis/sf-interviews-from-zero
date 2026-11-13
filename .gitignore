@@ -9,3 +9,5 @@ tests/output/
 .pytest_cache/
 tests/openxml/bin/
 tests/openxml/obj/
+tests/openxml/bin/
+tests/openxml/obj/

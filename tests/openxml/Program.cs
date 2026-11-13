@@ -1,32 +1,26 @@
-// Checks every workbook against the Open XML schema with Microsoft's own Open XML SDK,
-// the rules Excel applies when it opens a file. A file that fails here is the kind
-// Excel offers to "repair". Usage: dotnet run --project tests/openxml -- excel
-using System;
-using System.IO;
-using System.Linq;
+// Validates every workbook in excel/ with Microsoft's Open XML SDK, against the
+// Office 2019 file format: the rules Excel applies when it opens a file.
+// A workbook that fails here is one Excel would offer to "repair".
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Validation;
 
-var folder = args.Length > 0 ? args[0] : "excel";
-var report = new System.Text.StringBuilder();
-report.AppendLine("# Workbooks checked with Microsoft's Open XML SDK (Office 2019 rules)\n");
-report.AppendLine("| Workbook | Sheets | Charts | Schema errors |");
-report.AppendLine("|---|---:|---:|---:|");
+var dir = args.Length > 0 ? args[0] : "excel";
+var validator = new OpenXmlValidator(FileFormatVersions.Office2019);
 int total = 0;
-foreach (var path in Directory.GetFiles(folder, "*.xlsx").OrderBy(p => p))
+var report = new List<string> { "# Excel file format (Microsoft Open XML SDK, Office 2019 rules)", "",
+                                "| Workbook | Errors |", "|---|---:|" };
+foreach (var path in Directory.GetFiles(dir, "*.xlsx").OrderBy(p => p))
 {
     using var doc = SpreadsheetDocument.Open(path, false);
-    var validator = new OpenXmlValidator(FileFormatVersions.Office2019);
     var errors = validator.Validate(doc).ToList();
-    var sheets = doc.WorkbookPart.WorksheetParts.Count();
-    var charts = doc.WorkbookPart.WorksheetParts.Sum(w => w.DrawingsPart?.ChartParts.Count() ?? 0);
+    total += errors.Count;
+    report.Add($"| {Path.GetFileName(path)} | {errors.Count} |");
     foreach (var e in errors.Take(20))
         Console.WriteLine($"{Path.GetFileName(path)}: {e.Part?.Uri} {e.Path?.XPath}: {e.Description}");
-    report.AppendLine($"| {Path.GetFileName(path)} | {sheets} | {charts} | {errors.Count} |");
-    total += errors.Count;
 }
-Console.WriteLine(report.ToString());
+report.Add(""); report.Add($"**Errors in total: {total}**");
 Directory.CreateDirectory("tests/output");
-File.WriteAllText("tests/output/OPENXML_REPORT.md", report.ToString());
+File.WriteAllLines("tests/output/OPENXML_REPORT.md", report);
+Console.WriteLine(string.Join(Environment.NewLine, report));
 return total == 0 ? 0 : 1;

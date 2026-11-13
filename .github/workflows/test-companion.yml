@@ -79,9 +79,29 @@ jobs:
           python -m pip install "openpyxl>=3.1"
       - name: Recalculate every workbook and compare with the book
         run: python tests/check_excel.py
+      - name: Check the lists, colour rules, chart and links saved in the files
+        if: always()
+        run: python tests/check_excel_features.py
+      - name: Publish the reports
+        if: always()
+        run: cat tests/output/EXCEL_REPORT.md tests/output/EXCEL_FEATURES_REPORT.md >> "$GITHUB_STEP_SUMMARY"
+
+  excel-file-format:
+    name: Excel file format (Microsoft Open XML SDK)
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Validate every workbook against Excel's file format rules
+        shell: bash
+        run: dotnet run --project tests/openxml -- excel
       - name: Publish the report
         if: always()
-        run: cat tests/output/EXCEL_REPORT.md >> "$GITHUB_STEP_SUMMARY"
+        shell: bash
+        run: cat tests/output/OPENXML_REPORT.md >> "$GITHUB_STEP_SUMMARY"
 
   excel-second-checks:
     name: Excel workbooks (Open XML SDK and a second calculation engine)
