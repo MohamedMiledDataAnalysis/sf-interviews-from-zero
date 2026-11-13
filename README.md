@@ -18,7 +18,7 @@ Chapter 0 of the book walks through every step. In short:
 | Folder | Files | Book chapters |
 |---|---|---|
 | `data/` | `ashcombe_loan_tape.csv` (1,200 loans), `servicer_balances.csv`, `ashcombe_loan_history.csv` (7,426 rows), `ashcombe_periods.csv`, `ashcombe_deal_inputs.csv` | 9–20 |
-| `excel/` | `ch16_excel_workbook.xlsx`; `test1_blank.xlsx` and `test1_solution.xlsx`; `test2_blank.xlsx` and `test2_solution.xlsx` | 16, 19, 20 |
+| `excel/` | `ch16_excel_workbook.xlsx`; `test1_blank.xlsx` and `test1_solution.xlsx`; `test2_blank.xlsx` and `test2_solution.xlsx`; `test3_blank.xlsx` and `test3_solution.xlsx` (the timed Excel skills test) | 16, 19, 20, 21 |
 | `sql/` | `00_setup.sql`; `ch17_01` to `ch17_10` query scripts (SQL Server) | 0, 17 |
 | `sql/sqlite_version/` | The same queries for SQLite; `build_db.py` and `run_query.py` | 0, 17 |
 | `python/` | `00_check_setup.py`; `ch18_01` to `ch18_09` scripts; `ch11_stress_12_months.py` | 0, 11, 18 |
