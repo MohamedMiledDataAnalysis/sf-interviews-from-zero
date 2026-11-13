@@ -1,5 +1,7 @@
 -- Practice test 2, question 4: the pool figures before and after the corrections
--- (Chapter 20). Run after 00_setup.sql. SQL Server.
+-- (Chapter 20). Run 00_setup.sql first. SQL Server / T-SQL.
+USE ashcombe;
+GO
 
 -- 4a. Weighted average interest rate, with ASH100602 corrected to 5.37%
 -- Expected: 5.444 and 5.400
