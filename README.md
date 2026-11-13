@@ -43,7 +43,8 @@ The workflow `.github/workflows/test-companion.yml` tests every file in this rep
 | Python and SQLite | Runs every script in `python/` and every SQLite script, on Windows, macOS and Linux, with Python 3.11 and 3.13 | `tests/run_python.py` |
 | Excel | Removes every stored result from each workbook, recalculates every formula in LibreOffice, and fails on any error value or any result that differs from the book | `tests/check_excel.py` |
 | Excel features | Checks the drop-down lists, colour rules, chart axes and links saved in Practice test 3, and that the blank version holds no answers | `tests/check_excel_features.py` |
-| Excel file format | Validates every workbook with Microsoft's Open XML SDK against the Office 2019 rules Excel applies when it opens a file, on Windows | `tests/openxml/` |
+| Excel file format | Validates every workbook with Microsoft's Open XML SDK against the Office 2019 rules Excel applies when it opens a file | `tests/openxml/` |
+| Excel, second engine | Recalculates every formula again with a different engine (the Python package `formulas`) and compares with the book | `tests/check_excel_formulas.py` |
 
 `ch17_08_keys_indexes.sql` fails on purpose at queries 8.1 and 8.4, in both SQL Server and SQLite; the tests expect exactly those errors (`tests/expected_messages.txt`).
 
