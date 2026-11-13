@@ -1,0 +1,8 @@
+# Generated files
+sql/sqlite_version/ashcombe.db
+python/output/
+__pycache__/
+.ipynb_checkpoints/
+~$*.xlsx
+.venv/
+tests/output/

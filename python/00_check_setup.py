@@ -1,0 +1,16 @@
+"""Chapter 0: checks that Python, pandas and the companion files work.
+Run from the companion folder:  python python/00_check_setup.py"""
+import sys
+sys.stdout.reconfigure(errors="replace")  # print £ safely on any console
+from pathlib import Path
+import pandas as pd
+
+DATA = Path(__file__).resolve().parent.parent / "data"
+tape = pd.read_csv(DATA / "ashcombe_loan_tape.csv")
+
+print(f"Loans: {len(tape):,}")
+print(f"Pool balance: £{tape['current_balance'].sum():,.0f}")
+print(f"pandas {pd.__version__}")
+if tuple(int(x) for x in pd.__version__.split(".")[:2]) < (2, 2):
+    print("Please upgrade pandas: python -m pip install -r requirements.txt")
+print("Setup OK" if len(tape) == 1200 else "Something is wrong: expected 1,200 loans")

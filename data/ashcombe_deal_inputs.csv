@@ -1,0 +1,19 @@
+parameter,value,unit
+deal_name,Ashcombe Mortgages No. 1,text
+cut_off_date,2026-06-30,date
+closing_date,2026-07-15,date
+first_payment_date,2026-08-20,date
+pool_balance_at_cut_off,240000000,GBP
+number_of_loans,1200,count
+class_a_original,206400000,GBP
+class_a_coupon,0.045,annual rate
+class_b_original,33600000,GBP
+class_b_coupon,0.06,annual rate
+servicing_fee_rate,0.0025,annual rate on opening pool
+senior_expenses_monthly,30000,GBP
+reserve_fund_required,2400000,GBP
+principal_payment,sequential,text
+optional_call_date,2031-08-20,date
+clean_up_call,0.10,share of original pool
+legal_final_maturity,2066-08-20,date
+retention_method,vertical 5%,text
