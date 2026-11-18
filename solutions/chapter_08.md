@@ -126,12 +126,14 @@ Each line: absorbed = the smaller of the layer's size and the loss still to plac
 - **The structure works as designed.** The junior classes, paid a higher coupon for this risk, take the loss; the senior classes are untouched.
 - **Class B is £5m from its first loss.** Its credit enhancement is 10% of the pool, £50m (Class C, Class D and the OC below it); losses of £45m leave £5m of that protection, which is only 1% of the pool.
 - **£45m is 9% of the pool, a very severe loss.** The illustrative AAA stress of Chapter 11 (Section 11.4) gives a 3.6% loss on Ashcombe's pool; a pool losing 9% would need far weaker loans or a far deeper house price fall. Class A, with 16%, survives both.
+- **Class D was the first loss piece.** Notes at the bottom of the stack are often kept by the originator or sold to specialist investors precisely because they are expected to absorb losses in a bad scenario.
 
 #### Checking your answer
 
 - **The pieces add up.** £10m + £15m + £20m = £45m.
 - **Credit enhancement in pounds.** Class C's CE is 5% × £500m = £25m; losses of £45m exceed it by £20m, Class C's loss. Class B's CE is £50m; £45m is below it, so Class B loses nothing. Class D's CE is £10m; losses exceed it by £35m, more than its £15m size, so it is wiped out.
 - **What remains.** Notes after losses: £420m + £30m + £5m + £0 = £455m, against a pool of £455m. Notes equal pool again, with no OC left.
+- **Percentages.** Class C's loss is 20 ÷ 25 = 80% of its balance; as a share of the pool, losses of 9% have been absorbed by 10% of protection below Class B, leaving 1%.
 
 #### Mistakes people make on this exercise
 

@@ -67,6 +67,7 @@ Tracker    5.245%
 - **SVR loans pay the most, 7.25%**, as in SQL: the lender's standard variable rate, paid by borrowers whose deal has ended.
 - **Fixed is overstated by the 53.7% keying error** on ASH100602 (Chapter 15). Exercise 6 corrects it.
 - **Three tools, one figure.** Excel (SUMPRODUCT), SQL (two SUMs) and pandas (`groupby` and `sum`) give the same 5.175%, 7.247% and 5.245%. In an interview, saying that you checked one tool against another is worth as much as the number.
+- **The figures are for a report, the precision is for checking.** Three decimals of a percent (5.175%) are enough to compare tools; a report shows two (5.17%). Keep the full value in the data and format only for display.
 
 #### Checking your answer
 
@@ -80,18 +81,23 @@ prints 0.05444…, the pool's 5.444% (Section 18.3).
 
 - **The SQL result.** Chapter 17, Exercise 4 returns the same three figures.
 - **Sizes.** `g["current_balance"]` shows £169,638,911, £29,797,202 and £40,563,887, which add to £240,000,000.
+- **One group by hand.** `t = tape[tape["rate_type"] == "SVR"]`, then `(t["interest_rate"] * t["current_balance"]).sum() / t["current_balance"].sum()` returns 0.07247, the SVR row.
 
 #### Mistakes people make on this exercise
 
 - **`tape.groupby("rate_type")["interest_rate"].mean()`.** It gives the simple average (Fixed 5.171%), not the weighted one.
 - **Summing the rates and the balances separately, then multiplying.** `g_rate.sum() * g_bal.sum()` is meaningless; the product must be taken row by row, before the sum.
 - **Adding `w` with `tape["w"] = …`.** It works, but changes `tape` for every later cell; in a notebook, a column that appears from an earlier cell is a common source of confusion. `assign` keeps the original clean.
+- **Forgetting the brackets around the column list.** `groupby("rate_type")["w", "current_balance"]` with single brackets raises an error in recent pandas; a list of columns needs double brackets.
+- **Ignoring missing rates.** If some rates were blank, `sum()` would skip their products but keep their balances in the denominator, and the average would be pulled down. Weight only the loans with a value, as Section 18.3 shows, and report how much balance was left out.
 
 #### Trade-offs and going further
 
 - **Sum and divide, or `np.average`.** `tape.groupby("rate_type").apply(lambda d: np.average(d["interest_rate"], weights=d["current_balance"]))` reads closer to the definition, but loops over the groups in Python; the sum-and-divide method is vectorised and stays fast on a tape of a million loans.
 - **One function for every weighted average.** Section 18.3 wraps the pool version in a function, `wa(column)`; adding a `by` argument that runs the `groupby` makes the same function serve rate, LTV and term by any group.
 - **Going further.** Group by two columns, `groupby(["rate_type", "repayment_type"])`: SVR interest-only loans pay the most, 7.26%.
+- **`pivot_table` for the same result.** `tape.assign(w=…).pivot_table(index="rate_type", values=["w", "current_balance"], aggfunc="sum")` gives the same two sums; it is handier when a second grouping goes across the columns.
+- **Tiny differences between tools.** Excel, SQL Server and pandas can disagree in the sixth or seventh decimal, because each adds floating-point numbers in a different order. Compare results rounded to the precision you report (three decimals of a percent here), not to the last digit.
 
 ### Exercise 2: a balance-size strat with pd.cut
 
@@ -173,6 +179,7 @@ The output:
 
 - **Excel, SQL and pandas agree band by band** (Chapter 16, Exercise 2; Chapter 17, Exercise 3). A strat built in one tool and checked in another is a strong control.
 - **71% of the balance sits between £100,000 and £300,000**; the 17 loans over £500,000 hold 4.2% of the pool, and are the first place to look for single-loan concentration.
+- **The table is ready for a report.** The labels match the Excel strat's wording, the bands are in order (a `pd.cut` result is an ordered category), and the shares add to 100%, so the DataFrame can be written to Excel with `to_excel` as it is.
 
 #### Checking your answer
 
@@ -185,12 +192,14 @@ The output:
 - **A last edge below the largest loan** (£840,940): those loans get `NaN` and vanish from the strat without a message, unless an assert catches them.
 - **`right=False`.** It switches the bands to `[lower, upper)`, so a loan of exactly £200,000 moves up a band, and the strat no longer matches Excel and SQL.
 - **`observed=True` (the newer default).** An empty band disappears from the table, and next month's report has a different number of rows.
+- **Labels in the wrong number.** Five bands need five labels and six edges; one label too many or too few stops `pd.cut` with a `ValueError`, which at least fails loudly.
 
 #### Trade-offs and going further
 
 - **Typed edges or derived edges.** Typed edges match the investor report and the prospectus; `pd.qcut(tape["current_balance"], 5)` makes five bands with equal numbers of loans, which is useful for analysis but not for a report, because the edges change every month.
 - **Asserts or a check table.** `assert` stops a script, which is right for an automated monthly run; in a notebook for a manager, a printed "check = 0" row is friendlier.
 - **Going further.** Add `wa_rate` to the strat with the two-sum method of Exercise 1. It varies little across bands, from 5.29% to 5.56%, and the highest figure, in the £200k to £300k band, contains the 53.7% keying error (Exercise 6): balance size does not drive rates in this pool.
+- **A reusable function.** Wrapping Steps 2 to 4 in `def strat(df, column, edges, labels)` gives one tested function for every strat (LTV, balance, seasoning); the monthly report then calls it once per table, and a change to the method is made in one place.
 
 ### Exercise 3: validate="one_to_one"
 
@@ -441,24 +450,30 @@ The output (shares rounded):
 - **The ten largest loans are 2.67% of the pool**, the same figure as SQL query 6.3. Each loan is at most 0.35% of the pool: the pool is granular, with no single loan that could hurt the notes on its own.
 - **Four of the ten are in London**: high balances follow high house prices. A region strat by balance and a top-ten list together show whether concentration is about borrowers or about places.
 - **Investors and rating agencies ask for this table.** Prospectuses and investor reports show the share of the largest loans or borrowers, because a pool with a few very large loans can lose a large share of its value through one default.
+- **The list falls slowly.** The tenth loan (£558,805) is two-thirds the size of the first (£840,940); there is no single outsized loan. A list where the first loan was several times the second would point to a special case worth reading in the loan file.
 
 #### Checking your answer
 
 - **The last line by another route.** `top["current_balance"].sum() / total` returns 0.02666, the 2.67% of the tenth row.
 - **`nlargest`.** `tape.nlargest(10, "current_balance")` returns the same ten loans in the same order.
 - **SQL.** Query 6.3 of Chapter 17 shows 2.67% for the tenth row.
+- **The first row.** `tape["current_balance"].max() / total` returns 0.0035, the 0.35% on the first line: the running share always starts with the largest loan's own share.
+- **The whole pool.** Without `.head(10)`, the last value of `cum_pct` is exactly 1.0: the running share of every loan adds to the pool. A last value other than 100% means a balance is missing or counted twice.
 
 #### Mistakes people make on this exercise
 
 - **Dividing by the ten loans' total.** `top["current_balance"].cumsum() / top["current_balance"].sum()` always ends at 100%, which says nothing about concentration.
 - **Computing the share before sorting.** `cumsum` on the unsorted tape adds loans in file order; the top ten are then not the first ten.
 - **`ascending=True`.** It lists the ten smallest loans, whose cumulative share (0.21%) looks reassuring and answers a different question.
+- **Forgetting to divide by the whole pool when the tape is filtered.** If `tape` has been cut to one region earlier in the notebook, `total` is that region's balance, and the shares are of the region, not of the pool. Name the denominator in the column label.
+- **Ties at the cut-off.** If the tenth and eleventh loans had the same balance, `head(10)` would keep one of them without saying so. Check `tape["current_balance"].nlargest(11)` and mention a tie if there is one; here there is none.
 
 #### Trade-offs and going further
 
 - **`sort_values` and `head`, or `nlargest`.** `nlargest` is shorter and faster on very large data, because it does not sort everything; `sort_values` makes the method explicit, which helps in an interview.
 - **Loans or borrowers.** One borrower can hold several loans; concentration limits in deal documents are usually per borrower. With a borrower ID, group first: `tape.groupby("borrower_id")["current_balance"].sum().nlargest(10)`.
 - **Going further.** Plot the cumulative share for all 1,200 loans (a concentration curve): the closer to a straight line, the more granular the pool.
+- **Formatting.** `top.style.format({"cum_pct": "{:.2%}", "current_balance": "{:,.0f}"})` displays the table with percentages and thousands separators in a notebook, without changing the numbers underneath.
 
 ### Exercise 6: correct the 53.7% rate
 
@@ -525,24 +540,29 @@ before 5.444%  after 5.400%
 - **One keying error moved the pool's WA rate by 0.044 percentage points** (4.4 basis points), on a loan that is 0.09% of the pool. A rate ten times too high carries a lot of weight.
 - **The corrected figure is the one to report.** The WA rate feeds the pool yield, and through it excess spread (Chapter 8): a 4.4 bp error overstates the pool's interest by about £8,800 a month.
 - **The as-received tape is kept.** `tape` still shows 53.7%, which is what the exceptions log must record as "found".
+- **The fix changes one group much more than the pool.** The pool's rate moves 4.4 bp; the Fixed group's moves 6.2 bp (Chapter 17, Exercise 4), because the same error is spread over a smaller balance. The smaller the group you report, the more one bad value can move it.
+- **Other figures move too.** Every output that uses the rate changes: the WA rate of the Fixed group, the rate strat (ASH100602 moves from an impossible top band to the 5% to 6% band) and the pool yield used for excess spread. Correcting the data once, before the report is built, fixes them all at the same time.
 
 #### Checking your answer
 
 - **The difference by arithmetic.** (0.537 − 0.0537) × £218,596 ÷ £240,000,000 = 0.00044, the 0.044% between the two outputs.
 - **Only one cell changed.** `(tape["interest_rate"] != fixed["interest_rate"]).sum()` returns 1.
 - **The same correction in SQL.** The `CASE` query of Chapter 17, Exercise 4 gives the corrected Fixed rate, 5.112%; Exercise 1 of this chapter run on `fixed` returns it too.
+- **The original is untouched.** After the change, `tape.loc[tape["loan_id"] == "ASH100602", "interest_rate"]` still shows 0.537: the copy worked.
 
 #### Mistakes people make on this exercise
 
 - **Chained assignment.** `fixed[row]["interest_rate"] = 0.0537` changes a temporary copy: pandas 2 warns, and pandas 3 changes nothing at all, silently. Always `.loc[row, column]`.
 - **No copy.** `fixed = tape` then `fixed.loc[…] = …` corrects `tape` too, and the "before" figure is lost.
 - **Dividing the rate by 10 everywhere.** `fixed["interest_rate"] / 10` breaks the 1,199 correct loans; fix the one loan that is wrong.
+- **Matching on the row number.** `fixed.loc[601, "interest_rate"] = 0.0537` works today because ASH100602 is row 601, but a re-sorted or refreshed tape puts another loan there. Always find the row by its ID.
 
 #### Trade-offs and going further
 
 - **Correct in code or at source.** A correction in code makes this month's report right; the servicer must fix the system, or next month's tape repeats the error. The exceptions log (Chapter 15) is how the two are linked.
 - **One fix, or a corrections table.** With several fixes, keep a small DataFrame of `loan_id`, `field`, `old`, `new` and apply it in a loop: the corrections become data, reviewed and reused, rather than lines scattered in a script.
 - **Going further.** Write a rule that would have caught the error automatically: `tape[(tape["interest_rate"] < 0) | (tape["interest_rate"] > 0.15)]` returns ASH100602 only.
+- **Logging the change.** In a monthly script, print or log the loan, the field, the old value and the new one at the moment of the change; the log becomes the evidence for the exceptions register.
 
 ### Exercise 7: 3+ months arrears by month
 
@@ -720,21 +740,26 @@ The output: **13.02%**.
 - **About 13% CPR gives a four-year WAL.** Around that point each extra 0.5% of CPR shortens the WAL by 0.12 to 0.13 years, about a month and a half.
 - **The curve flattens as CPR rises**: from 10% to 11% the WAL falls by 0.34 years, from 14% to 15% by 0.22. Each extra point of CPR prepays a smaller remaining balance.
 - **This is the question a pricing desk asks.** Notes are priced at an assumed CPR; investors want to know how far the WAL moves if prepayments differ. A table like Step 2 is the answer.
+- **Class A's WAL is a pricing input.** A note's price and its spread are quoted at a stated CPR; if prepayments run at 13% instead of 10%, Class A's life is nearly a year shorter (4.91 to 4.01 years), and an investor who bought above par receives the premium back over a shorter period.
 
 #### Checking your answer
 
 - **The WAL falls at every step** of the grid, as it must when only CPR changes.
 - **Section 18.9's table.** At 15% CPR it shows a Class A WAL of 3.55 years, the grid's last row.
 - **The bisection lands inside the grid's bracket**: 13.02% is between 13.0% (4.006) and 13.5% (3.882), close to 13.0%, as 4.006 is close to 4.
+- **Plug the answer back in.** `wal(project(cpr=0.13022), "class_a_principal")` returns 4.000 years to three decimals.
 
 #### Mistakes people make on this exercise
 
 - **Steps that are too coarse.** A grid of 10%, 12%, 14% jumps from 4.27 to 3.77 years and misses the closest value.
 - **Typing `cpr=13`.** The function expects 0.13. With 13, `(1 - cpr) ** (1 / 12)` takes a root of a negative number, Python returns a complex number, and the projection stops with a `TypeError`.
 - **Reading the pool's WAL instead of Class A's.** `wal(cf, "class_b_principal")` or a pool WAL gives a different, longer figure.
+- **Reusing a stale `cf`.** In a notebook, printing `wal(cf, …)` after the loop reads the last projection only (15%); every CPR needs its own projection, inside the loop.
+- **A bracket that does not contain the answer.** Starting the bisection with `lo, hi = 0.15, 0.20` (both WALs below 4 years) makes it converge to 15% without finding 4 years. Check that the WAL at `lo` is above 4 and at `hi` below before the loop.
 
 #### Trade-offs and going further
 
 - **Grid or bisection.** A grid shows the whole curve, which is what a reader needs to understand sensitivity; bisection finds one exact value fast. Give both: the table for the reader, the exact rate for the record.
 - **Speed.** Each projection runs a few hundred months, so forty runs take well under a second; for thousands of scenarios, vectorise the projection or cache results.
 - **Going further.** Repeat the grid with `cdr=0.02`: defaults also repay Class A in this model (Chapter 16, Exercise 8), so the CPR needed for four years falls to 11.69%.
+- **A library root-finder.** `scipy.optimize.brentq(lambda c: wal(project(cpr=c), "class_a_principal") - 4, 0.10, 0.20)` finds the same 13.02% in a few lines; writing the bisection yourself shows you understand it, which is what an interview tests.

@@ -120,21 +120,25 @@ The exercise uses roll rates and cure rates, the measures of Section 11.8, *Moni
 - **More loans cured than rolled**, which is common: many arrears are temporary (a late salary, a changed bank account).
 - **A 35% roll from 2 to 3+ months is high.** Section 11.8's example shows a 21.6% roll from 1 to 2 months; roll rates usually rise in the deeper buckets, because a borrower who has missed two payments is more likely to be in real difficulty. At 3+ months, the loan is close to the point where the servicer starts possession proceedings.
 - **For a forecast**, multiplying roll rates bucket by bucket estimates how many of today's 1-month cases will reach default: the roll-rate matrix of Chapter 16 (Section 16.15) and Chapter 18 (Section 18.8) does this with the whole history.
+- **Ashcombe's own numbers.** In the June tape, 23 loans are 2 months in arrears and 24 are 3 months or more; applying a 35% roll to the 23 would add about 8 loans to the 3+ bucket next month, before any cures among the 24.
 
 #### Checking your answer
 
 - **The outcomes add up.** 14 + 18 + 8 = 40, and 35% + 45% + 20% = 100%.
 - **Same group, both rates.** Both rates divide by 40, last month's bucket. If a rate used this month's 3+ total (which also includes loans that were already 3+), the outcomes would not add to 100%.
 - **In the data.** The history file gives the same calculation for Ashcombe: count the loans at 2 months in May and see where each one is in June (Chapter 17, Section 17.10).
+- **A cure must be checked loan by loan.** A loan that was 2 months behind and is now up to date has paid two missed instalments plus the current one. If it shows up to date but its arrears balance has not fallen, ask whether the arrears were capitalised (added to the balance) rather than paid.
 
 #### Mistakes people make on this exercise
 
 - **Dividing by this month's 3+ bucket.** That bucket mixes loans that rolled in with loans already there; a roll rate always follows the same loans from one month to the next.
 - **Counting cures as any improvement.** A loan that moved from 2 months to 1 month has improved but not cured; "cure" means back to up to date.
 - **Reading a 45% cure rate as good news on its own.** It is good for those 18 loans; the 14 that rolled are the ones that drive losses.
+- **Treating capitalised arrears as a cure.** A loan whose arrears are added to its balance shows 0 months behind without the borrower paying anything: in the data it cures, in substance it does not. Forbearance (Chapter 13) is the usual cause.
 
 #### Trade-offs and going further
 
 - **Loans or balance.** Counting loans is simple and stable; weighting by balance shows the money at risk. A few large loans can move a balance-weighted roll rate a lot, so reports often show both.
 - **One month or an average.** A single month is noisy with 40 loans: one loan is 2.5 percentage points. Analysts average roll rates over three or six months before using them in a forecast.
 - **Going further.** If 35% of 2-month loans roll to 3+, and 60% of 3+ loans eventually default, about 21% of today's 2-month loans will default: 35% × 60%.
+- **Roll rates and transition matrices.** A full matrix shows every move between buckets (up to date, 1, 2, 3+, possession) in one table; the roll and cure rates of this exercise are two cells of it.

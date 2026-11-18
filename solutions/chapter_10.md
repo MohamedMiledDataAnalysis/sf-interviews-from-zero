@@ -42,24 +42,30 @@ The exercise uses the three LTVs of Section 10.3, *Loan-to-value (LTV): three ve
 - **The borrower's equity has grown from 10% to 36% of today's value.** At origination it was £30,000 (£300,000 − £270,000); today it is £135,000 (£375,000 − £240,000).
 - **Two causes, each visible in one step.** Repayments of £30,000 take the LTV from 90% to 80% (original to current); the 25% price rise takes it from 80% to 64% (current to indexed).
 - **Indexed LTV is the one that measures risk today.** If the loan defaulted now, the sale would be based on today's price, not the price at origination. Chapter 11 uses it to estimate the loss (LGD from LTV, Section 11.3).
+- **Three numbers, three questions.** Original LTV answers "how much did the lender risk at the start?"; current LTV, "how much has the borrower repaid?"; indexed LTV, "how much equity is there today?". Name the question before you quote the number.
 
 #### Checking your answer
 
 - **The order makes sense.** Indexed ≤ current ≤ original here, because the balance fell and prices rose. If prices had fallen, indexed LTV would be above current LTV.
 - **Indexed LTV by another route.** Current LTV ÷ index factor = 80% ÷ 1.25 = 64%.
 - **On the tape.** The tape's stored `indexed_ltv` must equal `current_balance ÷ indexed_valuation`; Chapter 15's consistency rule checks exactly this, and finds ASH100357 where it does not.
+- **Equity adds up.** Equity today = indexed value − balance = £375,000 − £240,000 = £135,000; as a share, 1 − 64% = 36%. The two routes agree.
+- **Ashcombe's pool.** The same pattern holds for the whole pool: WA original LTV 69.2%, WA indexed LTV 60.3% (Section 10.2).
 
 #### Mistakes people make on this exercise
 
 - **Calling £240,000 ÷ £375,000 the current LTV.** "Current" refers to the balance only; the value is still the original one.
 - **Dividing the original balance by the indexed value** (£270,000 ÷ £375,000 = 72%): a ratio of two figures from different dates that measures nothing.
 - **Adding 25 percentage points to the value instead of 25%.** The index rose by 25%, so the value is multiplied by 1.25, not increased by a fixed amount.
+- **Rounding the index.** A rise of 25% is a factor of 1.25; using an index level (say 125.0 against 100.0) gives the same factor, but mixing two index dates (the month of origination and the month of the valuation) changes it. Check which index months the tape uses.
+- **Indexing the balance.** The index applies to the property's value, not to the loan: the balance is what the borrower owes, whatever happens to house prices.
 
 #### Trade-offs and going further
 
 - **Index or valuation.** The indexed value uses a regional house price index, not a valuation of this house. It is cheap and updated every month, but can be wrong for one property; across a pool of 1,200 loans the errors average out, which is why reports use it.
 - **Which LTV to report.** Prospectuses show original and indexed LTV strats; current LTV is rarely shown, because it mixes today's balance with an old value.
 - **Going further.** If prices now fall 20% from today's level, the indexed value becomes £300,000 and the indexed LTV returns to 80%: the borrower's gain from the rise is wiped out, but the loan is still below its original 90%.
+- **Regional or national index.** A regional index tracks local prices better than a national one; for a pool concentrated in one region, the choice can move the WA indexed LTV by several points.
 
 ### Exercise 2: SMM and CPR
 

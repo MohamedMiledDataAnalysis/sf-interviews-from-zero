@@ -145,6 +145,7 @@ The exercise uses the revenue waterfall's order (Section 9.2), the PDL and how i
 - **Excess spread is the first defence and also the repair.** In month 2 it was too small to absorb the loss; from month 3 it rebuilds the protection, £45,000 a month.
 - **Class B is not paid less interest.** Item 5 is paid in full in month 3; the PDL is a gap in principal backing, not a missed coupon.
 - **The originator waits.** The residual holder receives nothing until the PDL is cleared: the investors are made whole first.
+- **The PDL is a signal to investors.** An outstanding Class B PDL appears in the investor report every month until it is cleared; a PDL that grows instead of shrinking is one of the first things a surveillance analyst flags.
 
 #### Checking your answer
 

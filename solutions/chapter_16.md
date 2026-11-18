@@ -225,6 +225,7 @@ The ␣ marks the space, which Excel does not show.
 - **It does not fix case.** ASH100096 stays `"london"`. Excel's own comparisons ignore case (SUMIFS with "London" already counts it), but SQL Server with a case-sensitive collation, pandas and Python do not. `=PROPER(TRIM(B6))` returns "London" for both loans.
 - **It cannot fix a different name.** "Greater London" (ASH101151) is a valid-looking text that is not in the allowed list. Only a mapping table (Chapter 15, Section 15.5) turns it into "London", and someone must decide that the mapping is right.
 - **So the lookup row is a display fix.** It shows the reader the clean value of one loan; it does not change the region used by the Metrics and Strats sheets, which still read column Q of the Tape.
+- **Why this matters in a lookup.** A lookup by region (a mapping table of collections teams, say) uses an exact match: `"London "` finds nothing and returns `#N/A`. Cleaning the key before the lookup is what makes it match; that is the practical reason TRIM is the first function analysts reach for on a new file.
 
 #### Checking your answer
 
@@ -376,24 +377,28 @@ The first four rows:
 - **On ACT/365 the coupon changes every month**: £712,504 for February's 28 days, £788,844 for a 31-day month. On 30/360 every regular month pays the same £774,000.
 - **Over the year the two are close.** The twelve ACT/365 payments add up to **£9,415,233**; the twelve 30/360 payments to £9,417,000. The difference is £1,767, because the year covered has 370 actual days, about 1.4% more than 365.
 - **This is why SONIA notes never pay the same amount twice.** Sterling floating-rate notes count actual days, so even with a flat rate the cash changes with the calendar; an analyst checking a payment must count the days first.
+- **The first period is long on both conventions.** Closing on 15 July and paying on 20 August gives a first period of more than a month (35 days on 30/360, 36 actual). Deals often have a long or short first period, and its interest is the one most often mis-stated in a model, because it does not follow the monthly pattern.
 
 #### Checking your answer
 
 - **Days add up to the span.** `=SUM(F8:F19)` returns **370**, and `=B19-B2` (20 July 2027 − 15 July 2026) also returns 370.
 - **Interest from the total.** £206,400,000 × 4.5% × 370 ÷ 365 = £9,415,233, the sum of H8:H19 (`=SUM(H8:H19)`). The rounding of each row happens to cancel exactly here; on other dates the two can differ by a pound or two.
 - **One row by hand.** Period 2: 206,400,000 × 0.045 = 9,288,000 a year; × 31 ÷ 365 = £788,843.84, rounded to £788,844.
+- **February.** Period 8 (20 February to 20 March 2027) is the shortest, 28 days, and its interest the smallest, £712,504. If your column shows the same amount every month, the days are not being picked up.
 
 #### Mistakes people make on this exercise
 
 - **Copying F8 down.** `=B9-$B$2` measures every period from closing: 67, 97, and so on. The `$` is what keeps B2 fixed, so the first-period formula cannot be copied.
 - **Dividing by 360 on the actual-days column.** ACT/360 is a real convention (used for euro and dollar notes), but it is not the one asked: period 2 would show £799,800.
 - **Formatting the days as dates.** A difference of two dates sometimes inherits a date format and displays as 05/02/1900. Format F8:F19 as General or Number.
+- **Using DAYS360 for the actual column.** `=DAYS360(B8,B9)` gives 30 for every regular month; actual days need plain subtraction (or `=DAYS(B9,B8)`, which is the same).
 
 #### Trade-offs and going further
 
 - **One sheet, two conventions.** Showing both columns side by side is the clearest way to explain a coupon to someone used to one convention. The cost is a wider sheet, and the risk that a reader takes the wrong column; label them precisely.
 - **ACT/365 or ACT/365F.** UK documents write "Actual/365 (Fixed)": always 365, even in a leap year. This exercise uses that convention; ACT/ACT would divide by 366 for periods in 2028.
 - **Going further.** Add column I with `=H8-E8`, the monthly difference between the two conventions. It is positive in 31-day months and negative in February.
+- **Hard-coded 365 or an input cell.** Writing the year basis in a labelled input cell (say B6 = 365) lets the same column compute ACT/360 by changing one number, and shows the reader which convention is in use.
 
 ### Exercise 6: PivotTable of rate type by repayment type
 
@@ -441,24 +446,30 @@ The result:
 - **The largest cell, fixed-rate repayment loans, holds £125.2m: 52.2% of the pool.** It is the "typical" Ashcombe loan.
 - **Interest-only is 22.1% of the pool.** Investors watch it because the whole balance is due at maturity; a cross-table shows whether those loans are also on SVR (£8.4m), the most expensive rate.
 - **SVR is the smallest rate type (12.4%)** but pays the highest WA rate (Chapter 17, Exercise 4): borrowers who did not remortgage.
+- **Cross-tables answer "and" questions.** "How much is fixed *and* interest-only?" (£36.0m) is the kind of follow-up an interviewer asks after a one-way strat. A pivot answers it without a new formula; a one-way strat cannot.
+- **Reading across and down.** Across a row, the shares tell you the product mix of each rate type (interest-only is 21% of Fixed, 28% of SVR); down a column, the rate mix of each product. Say which way you read before you quote a percentage.
 
 #### Checking your answer
 
 - **The grand total is £240,000,000**, the pool balance on the Metrics sheet.
 - **One cell by formula.** `=SUMIFS(Tape!H2:H1201,Tape!N2:N1201,"Fixed",Tape!O2:O1201,"Repayment")` returns £125,171,304, the Fixed/Repayment cell.
 - **Counts.** Change the value to Count: the totals are 853, 144 and 203 loans by rate type, and 245, 64 and 891 by repayment type, which add to 1,200.
+- **Row and column totals.** The row totals (Fixed £169,638,911, SVR £29,797,202, Tracker £40,563,887) must equal the WA-rate denominators of Chapter 17, Exercise 4; the column totals must match a SUMIFS on `repayment_type` alone.
 
 #### Mistakes people make on this exercise
 
 - **Leaving Values on Count.** The table then shows 1,200 in the corner and looks right; only the sizes reveal it is a count.
 - **Selecting one column before inserting.** The pivot then covers only that column and the other fields are missing from the list.
 - **Not refreshing after the data change.** A pivot is a snapshot: when the tape changes, PivotTable Analyze → Refresh is needed. A formula grid (SUMIFS) updates by itself.
+- **Building the pivot on a range that stops short.** If the source was selected as A1:W1000, 201 loans are missing, and the grand total shows less than £240m. Check the source range under PivotTable Analyze → Change Data Source.
+- **Typing numbers into the pivot.** A pivot cell cannot be edited; people copy the pivot as values and then edit, which breaks the link to the data. Corrections belong in the source.
 
 #### Trade-offs and going further
 
 - **Pivot or SUMIFS grid.** A pivot takes thirty seconds and lets you swap fields; a SUMIFS grid takes longer to build but updates by itself and sits inside a report layout. Use the pivot to explore, the grid for a monthly report.
 - **Pounds or percentages.** Value Field Settings → Show Values As → % of Grand Total turns the same table into shares (52.2% in the largest cell). Keep two pivots, one in each, rather than switching one back and forth.
 - **Going further.** Add `occupancy` to the Filters area and select Buy-to-let: interest-only is a much larger share of landlords' loans than of the pool.
+- **A pivot on a Table.** Converting the data to an Excel Table (Ctrl+T) before inserting the pivot makes the source grow automatically when rows are added; a plain range does not.
 
 ### Exercise 7: no-principal loans that are repayment loans
 
@@ -593,12 +604,14 @@ Severity changes the losses but not the WAL; CDR changes both.
 - **Severity is only a loss figure here.** It splits each default into recovery and loss, but the model pays Class A the whole defaulted balance either way, so severity cannot move the WAL.
 - **Losses rise more than fivefold**: four times more defaults, each losing 1.5 times more.
 - **For Class A this is not good news.** In a real deal, losses beyond excess spread go to the reserve and then to the PDL; the projection's simplification hides the point at which Class B, and then Class A, would lose principal.
+- **Prepayments still dominate.** Over the life of the pool, £153.1m is prepaid against £29.5m defaulted: even a 2% CDR is a small part of what repays Class A, which is why the WAL moves by under half a year.
 
 #### Checking your answer
 
 - **F7 still shows 0**: the model still repays all £206.4m of Class A, as its assumption guarantees.
 - **The direction is right.** More defaults → more principal sooner → shorter WAL, the same direction as a higher CPR (Section 16.16 shows WAL falling as CPR rises).
 - **The same model in Python.** `project(cpr=0.10, cdr=0.02, severity=0.30)` in `ch18_08_cashflow_projection.py` gives the same WAL and losses.
+- **Severity alone.** Set C6 back to 0.5% and C7 to 30%: F5 stays at 4.91 years while F6 rises to £2,384,617. A change in one input that moves only the result it should move is a check on the model's logic.
 
 #### Mistakes people make on this exercise
 
@@ -611,3 +624,4 @@ Severity changes the losses but not the WAL; CDR changes both.
 - **Simple projection or full waterfall.** A pool-level projection is fast, transparent and good for timing (WAL, final payment); it cannot show who bears losses. For that, run each month through the waterfall, as Chapter 18's `run_waterfall` does for one month.
 - **Constant CDR or a curve.** A flat 2% a year is easy to explain; real defaults peak a few years after origination. Agencies use default curves; a flat CDR is the interview standard.
 - **Going further.** Find the CDR at which lifetime losses reach £24,000,000 (10% of the pool) with 30% severity, by trying values in C6. Then say whether Class B, at £33.6m, would still be protected.
+- **One stress or a grid.** A single scenario answers the question asked; a small grid of CDR (0.5%, 1%, 2%, 4%) against severity (20%, 30%, 40%) with a Data Table (What-If Analysis → Data Table) shows the whole surface in one view and is what a reviewer asks for next.
