@@ -81,3 +81,66 @@ D2: =C2+$B$8/$B$7
 - **OC against a thicker junior class.** £10m of OC and £10m more of Class D give Class A the same protection. OC costs the originator, who sells £500m of loans but receives only £490m from investors; a larger Class D costs the deal its higher coupon every month. The arranger chooses the cheaper mix for the target ratings.
 - **CE grows over time.** If Class A is paid first (sequential payment), the junior classes and the OC become a larger share of a smaller pool, so Class A's CE rises (Section 8.5). Many deals switch to pro rata payment once CE has doubled, to stop the protection, and the cost, growing further.
 - **Going further.** After £20m of Class A has been repaid and no losses have occurred, the pool is £480m and Class A's CE is (£70m + £10m) ÷ £480m = **16.7%**, up from 16.0%.
+
+### Exercise 2: who loses £45 million?
+
+#### What the question asks
+
+> In the deal in question 1, cumulative losses reach £45,000,000. Which classes lose, and how much, assuming losses hit the OC first?
+
+In plain words: take the deal of Exercise 1 (a £500m pool; Class A £420m, Class B £30m, Class C £25m, Class D £15m) and suppose £45m of the pool is lost over its life. Share that loss out from the bottom of the structure upwards and say how much each class loses.
+
+The exercise uses the order of loss allocation (Section 8.4, *Who absorbs the loss: worked scenarios*), overcollateralisation and subordination (Section 8.3), and the results of Exercise 1: £10m of OC, and credit enhancement of 16% for Class A, 10% for Class B, 5% for Class C and 2% for Class D.
+
+#### The plan
+
+1. **List the layers from the bottom**: OC, Class D, Class C, Class B, Class A, with their sizes. Losses are absorbed in that order.
+2. **Apply the loss layer by layer**, taking from each layer as much as is left of the loss, up to the layer's size.
+3. **Stop when the loss is used up** and record each class's loss and what it keeps.
+4. **Check with credit enhancement**: a class loses nothing while total losses stay below its CE in pounds.
+
+#### Step by step
+
+**Step 1: the layers.** OC = pool − notes = £500m − £490m = **£10m**. From the bottom: OC £10m, Class D £15m, Class C £25m, Class B £30m, Class A £420m.
+
+**Step 2: apply the £45m.**
+
+| Layer | Size (£m) | Loss before (£m) | Absorbed (£m) | Loss left (£m) |
+|---|---:|---:|---:|---:|
+| OC | 10 | 45 | **10** | 35 |
+| Class D | 15 | 35 | **15** | 20 |
+| Class C | 25 | 20 | **20** | 0 |
+| Class B | 30 | 0 | 0 | 0 |
+| Class A | 420 | 0 | 0 | 0 |
+
+Each line: absorbed = the smaller of the layer's size and the loss still to place; loss left = loss before − absorbed.
+
+**Step 3: the answer.**
+
+- Class D loses its **whole £15m** (100%).
+- Class C loses **£20m of its £25m** (80%) and keeps £5m.
+- Classes B and A lose **nothing**.
+
+#### Reading the result
+
+- **The structure works as designed.** The junior classes, paid a higher coupon for this risk, take the loss; the senior classes are untouched.
+- **Class B is £5m from its first loss.** Its credit enhancement is 10% of the pool, £50m (Class C, Class D and the OC below it); losses of £45m leave £5m of that protection, which is only 1% of the pool.
+- **£45m is 9% of the pool, a very severe loss.** The illustrative AAA stress of Chapter 11 (Section 11.4) gives a 3.6% loss on Ashcombe's pool; a pool losing 9% would need far weaker loans or a far deeper house price fall. Class A, with 16%, survives both.
+
+#### Checking your answer
+
+- **The pieces add up.** £10m + £15m + £20m = £45m.
+- **Credit enhancement in pounds.** Class C's CE is 5% × £500m = £25m; losses of £45m exceed it by £20m, Class C's loss. Class B's CE is £50m; £45m is below it, so Class B loses nothing. Class D's CE is £10m; losses exceed it by £35m, more than its £15m size, so it is wiped out.
+- **What remains.** Notes after losses: £420m + £30m + £5m + £0 = £455m, against a pool of £455m. Notes equal pool again, with no OC left.
+
+#### Mistakes people make on this exercise
+
+- **Sharing the loss in proportion to size.** Class A would lose 84% × £45m = £37.8m: the opposite of what tranching is for.
+- **Forgetting the OC.** Starting with Class D: D loses £15m, C its whole £25m and B £5m. The OC is the first layer of protection and absorbs the first £10m.
+- **Starting from the top.** Losses go to the most junior layer first; principal goes to the most senior first. Mixing the two directions is the most common error in this kind of question.
+
+#### Trade-offs and going further
+
+- **Lifetime view or month by month.** This answer treats £45m as a total. In a real deal losses arrive over years, and each month's excess spread clears part of them through the PDL (Section 8.8) before they reach the notes. Lifetime losses of £45m could leave Class C whole if enough excess spread arrived in time; rating agencies' cash flow models credit it month by month.
+- **Write-down or PDL.** Some deals reduce the notes' balances at once; UK deals usually record a PDL and write down only at the end. The allocation is the same; the timing differs.
+- **Going further.** Find the loss at which Class A starts to lose: its CE of 16% × £500m = **£80m**.

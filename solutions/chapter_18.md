@@ -2,7 +2,197 @@
 
 ## Corrections
 
-### Exercise 1: validate="one_to_one"
+### Exercise 1: WA interest rate by rate type
+
+#### What the question asks
+
+> Calculate the balance-weighted average interest rate for each `rate_type`, using `groupby` and `sum`.
+
+In plain words: the same figure as SQL Exercise 4 of Chapter 17, in pandas: one weighted average rate for Fixed, SVR and Tracker loans, where each loan counts in proportion to its balance.
+
+The exercise uses the weighted average in pandas (Section 18.3), `groupby` with `sum` (Section 18.3), `assign` to add a column without changing the original DataFrame (Section 18.12), and the weighted average of Chapter 10 (Section 10.1).
+
+#### The plan
+
+1. **Compute each loan's weight** as rate × balance, a new column.
+2. **Group by `rate_type` and add up** both the weighted column and the balances.
+3. **Divide the two sums** in each group: the weighted average.
+4. **Check it** against the SQL result and against the pool's WA rate.
+
+#### Step by step
+
+**Step 1: load the tape.**
+
+```python
+import pandas as pd
+tape = pd.read_csv("data/ashcombe_loan_tape.csv")
+```
+
+- `read_csv` reads the 1,200 loans into a DataFrame; the path is relative to the repository root, where the scripts run.
+
+**Step 2: the weighted column and the group sums.**
+
+```python
+g = (tape.assign(w=tape["interest_rate"] * tape["current_balance"])
+         .groupby("rate_type")[["w", "current_balance"]]
+         .sum())
+```
+
+- `tape["interest_rate"] * tape["current_balance"]` multiplies the two columns row by row, like SUMPRODUCT's inner step.
+- `.assign(w=…)` returns a copy of `tape` with the new column `w`; `tape` itself is unchanged.
+- `.groupby("rate_type")` splits the rows by rate type; `[["w", "current_balance"]]` keeps the two columns to add; `.sum()` adds them in each group.
+- `g` has one row per rate type and two columns.
+
+**Step 3: divide.**
+
+```python
+wa = g["w"] / g["current_balance"]
+print(wa.map("{:.3%}".format))
+```
+
+- Dividing two Series divides row by row, matched on the index (the rate type).
+- `.map("{:.3%}".format)` formats each value as a percentage with three decimals, for display only.
+
+The output:
+
+```
+rate_type
+Fixed      5.175%
+SVR        7.247%
+Tracker    5.245%
+```
+
+#### Reading the result
+
+- **SVR loans pay the most, 7.25%**, as in SQL: the lender's standard variable rate, paid by borrowers whose deal has ended.
+- **Fixed is overstated by the 53.7% keying error** on ASH100602 (Chapter 15). Exercise 6 corrects it.
+- **Three tools, one figure.** Excel (SUMPRODUCT), SQL (two SUMs) and pandas (`groupby` and `sum`) give the same 5.175%, 7.247% and 5.245%. In an interview, saying that you checked one tool against another is worth as much as the number.
+
+#### Checking your answer
+
+- **The groups average to the pool.**
+
+```python
+print(g["w"].sum() / g["current_balance"].sum())
+```
+
+prints 0.05444…, the pool's 5.444% (Section 18.3).
+
+- **The SQL result.** Chapter 17, Exercise 4 returns the same three figures.
+- **Sizes.** `g["current_balance"]` shows £169,638,911, £29,797,202 and £40,563,887, which add to £240,000,000.
+
+#### Mistakes people make on this exercise
+
+- **`tape.groupby("rate_type")["interest_rate"].mean()`.** It gives the simple average (Fixed 5.171%), not the weighted one.
+- **Summing the rates and the balances separately, then multiplying.** `g_rate.sum() * g_bal.sum()` is meaningless; the product must be taken row by row, before the sum.
+- **Adding `w` with `tape["w"] = …`.** It works, but changes `tape` for every later cell; in a notebook, a column that appears from an earlier cell is a common source of confusion. `assign` keeps the original clean.
+
+#### Trade-offs and going further
+
+- **Sum and divide, or `np.average`.** `tape.groupby("rate_type").apply(lambda d: np.average(d["interest_rate"], weights=d["current_balance"]))` reads closer to the definition, but loops over the groups in Python; the sum-and-divide method is vectorised and stays fast on a tape of a million loans.
+- **One function for every weighted average.** Section 18.3 wraps the pool version in a function, `wa(column)`; adding a `by` argument that runs the `groupby` makes the same function serve rate, LTV and term by any group.
+- **Going further.** Group by two columns, `groupby(["rate_type", "repayment_type"])`: SVR interest-only loans pay the most, 7.26%.
+
+### Exercise 2: a balance-size strat with pd.cut
+
+#### What the question asks
+
+> Build a balance-size strat with `pd.cut` and the buckets of Chapter 16, exercise 2. Assert that it ties to the tape.
+
+In plain words: the five balance bands of the Excel strat (£100,000 or less, then up to £200,000, £300,000, £500,000, and above), built in pandas, with code that stops if the strat does not add up to the pool.
+
+The exercise uses `pd.cut` and `groupby().agg()` for strats (Section 18.3), `assert` for checks in code (Section 18.3), and the band convention of Chapter 10: "over the lower edge, up to and including the upper edge".
+
+#### The plan
+
+1. **Write the edges and labels** as lists, so the bands are visible at the top of the code.
+2. **Assign each loan to a band** with `pd.cut`.
+3. **Count and add up** each band with `groupby` and `agg`, and add the share of the pool.
+4. **Assert** that the counts and balances tie to the tape.
+
+#### Step by step
+
+**Step 1: edges and labels.**
+
+```python
+import pandas as pd
+tape = pd.read_csv("data/ashcombe_loan_tape.csv")
+edges = [0, 100_000, 200_000, 300_000, 500_000, 10_000_000]
+labels = ["£100k or less", ">£100k to £200k", ">£200k to £300k",
+          ">£300k to £500k", "Over £500k"]
+```
+
+- Six edges make five bands. The last edge, £10,000,000, is above any loan, so the top band is open in practice.
+- The underscores in `100_000` are only for reading; Python ignores them.
+
+**Step 2: the bands.**
+
+```python
+tape["size_bucket"] = pd.cut(tape["current_balance"],
+                             bins=edges, labels=labels)
+```
+
+- `pd.cut` puts each balance in the band `(lower, upper]`: a loan of exactly £100,000 goes in "£100k or less", as in Excel's `">"&B` and `"<="&C`.
+- A balance outside every band (above £10m, or £0) would get `NaN`; the asserts below would catch it.
+
+**Step 3: the strat.**
+
+```python
+size = (tape.groupby("size_bucket", observed=False)
+            .agg(loans=("loan_id", "size"),
+                 balance=("current_balance", "sum")))
+size["pct_of_pool"] = size["balance"] / size["balance"].sum()
+```
+
+- `observed=False` keeps every band, even an empty one, so the table always has five rows.
+- `.agg(loans=("loan_id", "size"), balance=("current_balance", "sum"))` names each output column and says how to compute it.
+- The share divides each band by the strat's total.
+
+**Step 4: the checks.**
+
+```python
+assert size["loans"].sum() == len(tape)
+assert size["balance"].sum() == tape["current_balance"].sum()
+print(size)
+```
+
+- Each `assert` is silent when true and stops the script with `AssertionError` when false.
+- Comparing with `len(tape)` and the tape's own sum, not with typed numbers, keeps the check valid next month.
+
+The output:
+
+| size_bucket | loans | balance | pct_of_pool |
+|---|---:|---:|---:|
+| £100k or less | 125 | 10,205,405 | 4.25% |
+| >£100k to £200k | 581 | 87,927,905 | 36.64% |
+| >£200k to £300k | 340 | 82,154,579 | 34.23% |
+| >£300k to £500k | 137 | 49,632,662 | 20.68% |
+| Over £500k | 17 | 10,079,449 | 4.20% |
+
+#### Reading the result
+
+- **Excel, SQL and pandas agree band by band** (Chapter 16, Exercise 2; Chapter 17, Exercise 3). A strat built in one tool and checked in another is a strong control.
+- **71% of the balance sits between £100,000 and £300,000**; the 17 loans over £500,000 hold 4.2% of the pool, and are the first place to look for single-loan concentration.
+
+#### Checking your answer
+
+- **The asserts pass**, so the strat holds every loan and every pound.
+- **Break it on purpose.** Change the last edge to 500,000: the 17 largest loans fall outside every band, `size["loans"].sum()` becomes 1,183, and the first assert stops the script. A check you have seen fail is a check you can trust.
+- **One band by hand.** `((tape["current_balance"] > 100_000) & (tape["current_balance"] <= 200_000)).sum()` returns 581.
+
+#### Mistakes people make on this exercise
+
+- **A last edge below the largest loan** (£840,940): those loans get `NaN` and vanish from the strat without a message, unless an assert catches them.
+- **`right=False`.** It switches the bands to `[lower, upper)`, so a loan of exactly £200,000 moves up a band, and the strat no longer matches Excel and SQL.
+- **`observed=True` (the newer default).** An empty band disappears from the table, and next month's report has a different number of rows.
+
+#### Trade-offs and going further
+
+- **Typed edges or derived edges.** Typed edges match the investor report and the prospectus; `pd.qcut(tape["current_balance"], 5)` makes five bands with equal numbers of loans, which is useful for analysis but not for a report, because the edges change every month.
+- **Asserts or a check table.** `assert` stops a script, which is right for an automated monthly run; in a notebook for a manager, a printed "check = 0" row is friendlier.
+- **Going further.** Add `wa_rate` to the strat with the two-sum method of Exercise 1. It varies little across bands, from 5.29% to 5.56%, and the highest figure, in the £200k to £300k band, contains the 53.7% keying error (Exercise 6): balance size does not drive rates in this pool.
+
+### Exercise 3: validate="one_to_one"
 
 #### What the question asks
 
@@ -94,7 +284,7 @@ Two different loans share one ID. Chapter 15 found the cause: the 2020 loan is r
 
 - **`validate` in every merge.** The four values (`one_to_one`, `one_to_many`, `many_to_one`, `many_to_many`) cover every case; writing the one you expect documents the join for the next reader as well as checking it.
 
-### Exercise 2: the smallest month 2 loss that empties the reserve
+### Exercise 4: the smallest month 2 loss that empties the reserve
 
 #### What the question asks
 
@@ -192,7 +382,169 @@ print(loss, month2(loss - 1_000)["Closing reserve"])
 
 - **Copy the month or recompute.** The function recomputes everything from the inputs, so each run is independent and the loop can try any loss. A spreadsheet that copies a month's block can do the same with Goal Seek, but only one cell at a time.
 
-### Exercise 3: 3+ months arrears by month
+### Exercise 5: the ten largest loans with cumulative share
+
+#### What the question asks
+
+> List the ten largest loans with their cumulative percentage of the pool (like SQL query 6.3). Hint: `sort_values`, then `cumsum()`.
+
+In plain words: a top-ten list of loans by balance, with a running total expressed as a share of the whole pool, so that the last line says how much of the pool the ten largest loans hold.
+
+The exercise uses `sort_values`, `head` and `cumsum` (Section 18.12), and the concentration measure of Chapter 10 (Section 10.10) that SQL query 6.3 computes with a running window (Section 17.7).
+
+#### The plan
+
+1. **Sort the tape by balance, largest first**, and keep ten rows.
+2. **Compute the running total** of the ten balances.
+3. **Divide by the whole pool**, not by the ten loans.
+4. **Check the last line** against SQL query 6.3.
+
+#### Step by step
+
+**Step 1: the ten largest.**
+
+```python
+import pandas as pd
+tape = pd.read_csv("data/ashcombe_loan_tape.csv")
+cols = ["loan_id", "region", "current_balance"]
+top = (tape.sort_values("current_balance", ascending=False)
+           .head(10)[cols])
+```
+
+- `sort_values(…, ascending=False)` orders the 1,200 loans from largest to smallest.
+- `.head(10)` keeps the first ten; `[cols]` keeps three columns.
+
+**Step 2: the running share.**
+
+```python
+total = tape["current_balance"].sum()
+top["cum_pct"] = top["current_balance"].cumsum() / total
+print(top)
+```
+
+- `total` is the pool, £240,000,000, computed from the data.
+- `cumsum()` adds the balances down the list: the first value is the largest loan, the tenth is the sum of all ten.
+- Dividing by `total` turns each running sum into a share of the pool.
+
+The output (shares rounded):
+
+| loan_id | region | current_balance | cum_pct |
+|---|---|---:|---:|
+| ASH100881 | London | 840,940 | 0.35% |
+| ASH100772 | East of England | 758,161 | 0.67% |
+| ASH100484 | Yorkshire and the Humber | 620,912 | 0.92% |
+| … | | | |
+| ASH100185 | Yorkshire and the Humber | 558,805 | **2.67%** |
+
+#### Reading the result
+
+- **The ten largest loans are 2.67% of the pool**, the same figure as SQL query 6.3. Each loan is at most 0.35% of the pool: the pool is granular, with no single loan that could hurt the notes on its own.
+- **Four of the ten are in London**: high balances follow high house prices. A region strat by balance and a top-ten list together show whether concentration is about borrowers or about places.
+- **Investors and rating agencies ask for this table.** Prospectuses and investor reports show the share of the largest loans or borrowers, because a pool with a few very large loans can lose a large share of its value through one default.
+
+#### Checking your answer
+
+- **The last line by another route.** `top["current_balance"].sum() / total` returns 0.02666, the 2.67% of the tenth row.
+- **`nlargest`.** `tape.nlargest(10, "current_balance")` returns the same ten loans in the same order.
+- **SQL.** Query 6.3 of Chapter 17 shows 2.67% for the tenth row.
+
+#### Mistakes people make on this exercise
+
+- **Dividing by the ten loans' total.** `top["current_balance"].cumsum() / top["current_balance"].sum()` always ends at 100%, which says nothing about concentration.
+- **Computing the share before sorting.** `cumsum` on the unsorted tape adds loans in file order; the top ten are then not the first ten.
+- **`ascending=True`.** It lists the ten smallest loans, whose cumulative share (0.21%) looks reassuring and answers a different question.
+
+#### Trade-offs and going further
+
+- **`sort_values` and `head`, or `nlargest`.** `nlargest` is shorter and faster on very large data, because it does not sort everything; `sort_values` makes the method explicit, which helps in an interview.
+- **Loans or borrowers.** One borrower can hold several loans; concentration limits in deal documents are usually per borrower. With a borrower ID, group first: `tape.groupby("borrower_id")["current_balance"].sum().nlargest(10)`.
+- **Going further.** Plot the cumulative share for all 1,200 loans (a concentration curve): the closer to a straight line, the more granular the pool.
+
+### Exercise 6: correct the 53.7% rate
+
+#### What the question asks
+
+> Correct the 53.7% rate in a copy of the DataFrame and recalculate the WA interest rate.
+
+In plain words: one loan, ASH100602, has its rate keyed as 53.7% instead of 5.37% (Chapter 15). Fix it, without touching the data as received, and show how the pool's weighted average rate changes.
+
+The exercise uses `copy()`, boolean masks and `.loc` for changing values (Section 18.4), the weighted average (Section 18.3), and the data quality finding of Chapter 15 (Section 15.3).
+
+#### The plan
+
+1. **Copy the DataFrame**, so the as-received tape is still available for the exceptions log and the "before" figure.
+2. **Find the row** with a mask on `loan_id`.
+3. **Change the one cell** with `.loc[row, column]`.
+4. **Recompute the WA rate** before and after, and explain the difference.
+
+#### Step by step
+
+**Step 1: the copy.**
+
+```python
+import pandas as pd
+tape = pd.read_csv("data/ashcombe_loan_tape.csv")
+fixed = tape.copy()
+```
+
+- `copy()` makes an independent DataFrame. Without it, `fixed = tape` is a second name for the same data, and a change to one changes both.
+
+**Step 2: the mask and the change.**
+
+```python
+row = fixed["loan_id"] == "ASH100602"
+print(fixed.loc[row, "interest_rate"])
+fixed.loc[row, "interest_rate"] = 0.0537
+```
+
+- `row` is a Series of True and False, True only for ASH100602.
+- The `print` shows the value before the change: 0.537. Looking before changing proves the mask finds the loan.
+- `.loc[row, "interest_rate"] = 0.0537` sets that one cell. `.loc` takes rows first, then the column.
+
+**Step 3: before and after.**
+
+```python
+def wa_rate(df):
+    bal = df["current_balance"]
+    return (df["interest_rate"] * bal).sum() / bal.sum()
+
+print(f"before {wa_rate(tape):.3%}  after {wa_rate(fixed):.3%}")
+```
+
+- A small function avoids writing the same formula twice.
+- `:.3%` formats with three decimals.
+
+The output:
+
+```
+before 5.444%  after 5.400%
+```
+
+#### Reading the result
+
+- **One keying error moved the pool's WA rate by 0.044 percentage points** (4.4 basis points), on a loan that is 0.09% of the pool. A rate ten times too high carries a lot of weight.
+- **The corrected figure is the one to report.** The WA rate feeds the pool yield, and through it excess spread (Chapter 8): a 4.4 bp error overstates the pool's interest by about £8,800 a month.
+- **The as-received tape is kept.** `tape` still shows 53.7%, which is what the exceptions log must record as "found".
+
+#### Checking your answer
+
+- **The difference by arithmetic.** (0.537 − 0.0537) × £218,596 ÷ £240,000,000 = 0.00044, the 0.044% between the two outputs.
+- **Only one cell changed.** `(tape["interest_rate"] != fixed["interest_rate"]).sum()` returns 1.
+- **The same correction in SQL.** The `CASE` query of Chapter 17, Exercise 4 gives the corrected Fixed rate, 5.112%; Exercise 1 of this chapter run on `fixed` returns it too.
+
+#### Mistakes people make on this exercise
+
+- **Chained assignment.** `fixed[row]["interest_rate"] = 0.0537` changes a temporary copy: pandas 2 warns, and pandas 3 changes nothing at all, silently. Always `.loc[row, column]`.
+- **No copy.** `fixed = tape` then `fixed.loc[…] = …` corrects `tape` too, and the "before" figure is lost.
+- **Dividing the rate by 10 everywhere.** `fixed["interest_rate"] / 10` breaks the 1,199 correct loans; fix the one loan that is wrong.
+
+#### Trade-offs and going further
+
+- **Correct in code or at source.** A correction in code makes this month's report right; the servicer must fix the system, or next month's tape repeats the error. The exceptions log (Chapter 15) is how the two are linked.
+- **One fix, or a corrections table.** With several fixes, keep a small DataFrame of `loan_id`, `field`, `old`, `new` and apply it in a loop: the corrections become data, reviewed and reused, rather than lines scattered in a script.
+- **Going further.** Write a rule that would have caught the error automatically: `tape[(tape["interest_rate"] < 0) | (tape["interest_rate"] > 0.15)]` returns ASH100602 only.
+
+### Exercise 7: 3+ months arrears by month
 
 #### What the question asks
 
@@ -288,3 +640,101 @@ The output:
 - **Going further.** Add the number of loans with `n3=late.astype(int)` in the same `assign`, and sum it in the group-by. The six counts are 10, 16, 18, 19, 21 and 24.
 
 - **History file or monthly tapes.** The history file has six months in one table, which makes this a single group-by. With six separate monthly tapes, read them in a loop, add a `month_end` column to each and `concat` them first (Section 18.12, *Many monthly files*).
+
+### Exercise 8: the CPR for a 4-year WAL
+
+#### What the question asks
+
+> Using `project`, find the CPR at which Class A's WAL is closest to 4 years.
+
+In plain words: run the cash flow projection of `ch18_08_cashflow_projection.py` at several prepayment speeds, read Class A's weighted average life each time, and find the speed that gives four years.
+
+The exercise uses the functions `project` and `wal` (Section 18.9), CPR (Chapter 10, Section 10.7) and the WAL (Section 10.9). At 10% CPR, Class A's WAL is 4.91 years.
+
+#### The plan
+
+1. **Know the direction**: a higher CPR repays principal sooner, so the WAL falls. Four years needs a CPR above 10%.
+2. **Run a grid of CPRs** in small steps, and print the WAL for each.
+3. **Read the closest value**, then refine with a bisection for the exact rate.
+4. **Check** that the WAL falls at every step.
+
+#### Step by step
+
+**Step 1: import the functions.**
+
+```python
+import sys
+sys.path.append("python")   # notebook only
+from ch18_08_cashflow_projection import project, wal
+```
+
+- `sys.path.append("python")` lets a notebook in the repository root find the script; a script in the `python` folder finds it without this line.
+- `project(cpr=…)` returns a DataFrame of monthly cash flows; `wal(cf, "class_a_principal")` computes the WAL of a principal column in years.
+
+**Step 2: the grid.**
+
+```python
+for cpr in [0.10 + 0.005 * i for i in range(11)]:
+    cf = project(cpr=cpr)
+    print(f"{cpr:.1%}", round(wal(cf, "class_a_principal"), 3))
+```
+
+- The list comprehension makes eleven CPRs: 10.0%, 10.5%, … 15.0%.
+- For each, the pool is projected and Class A's WAL printed with three decimals.
+
+The output:
+
+| CPR | WAL (years) |
+|---:|---:|
+| 10.0% | 4.912 |
+| 11.0% | 4.574 |
+| 12.0% | 4.274 |
+| 12.5% | 4.136 |
+| **13.0%** | **4.006** |
+| 13.5% | 3.882 |
+| 14.0% | 3.765 |
+| 15.0% | 3.549 |
+
+**13% CPR** gives the WAL closest to 4 years.
+
+**Step 3: the exact rate.**
+
+```python
+lo, hi = 0.10, 0.20
+for _ in range(40):
+    mid = (lo + hi) / 2
+    if wal(project(cpr=mid), "class_a_principal") > 4:
+        lo = mid
+    else:
+        hi = mid
+print(f"{mid:.2%}")
+```
+
+- `lo` gives a WAL above 4 years, `hi` one below; each pass halves the range and keeps the half that contains 4.
+- Forty halvings narrow 10 percentage points to far below a basis point.
+
+The output: **13.02%**.
+
+#### Reading the result
+
+- **About 13% CPR gives a four-year WAL.** Around that point each extra 0.5% of CPR shortens the WAL by 0.12 to 0.13 years, about a month and a half.
+- **The curve flattens as CPR rises**: from 10% to 11% the WAL falls by 0.34 years, from 14% to 15% by 0.22. Each extra point of CPR prepays a smaller remaining balance.
+- **This is the question a pricing desk asks.** Notes are priced at an assumed CPR; investors want to know how far the WAL moves if prepayments differ. A table like Step 2 is the answer.
+
+#### Checking your answer
+
+- **The WAL falls at every step** of the grid, as it must when only CPR changes.
+- **Section 18.9's table.** At 15% CPR it shows a Class A WAL of 3.55 years, the grid's last row.
+- **The bisection lands inside the grid's bracket**: 13.02% is between 13.0% (4.006) and 13.5% (3.882), close to 13.0%, as 4.006 is close to 4.
+
+#### Mistakes people make on this exercise
+
+- **Steps that are too coarse.** A grid of 10%, 12%, 14% jumps from 4.27 to 3.77 years and misses the closest value.
+- **Typing `cpr=13`.** The function expects 0.13. With 13, `(1 - cpr) ** (1 / 12)` takes a root of a negative number, Python returns a complex number, and the projection stops with a `TypeError`.
+- **Reading the pool's WAL instead of Class A's.** `wal(cf, "class_b_principal")` or a pool WAL gives a different, longer figure.
+
+#### Trade-offs and going further
+
+- **Grid or bisection.** A grid shows the whole curve, which is what a reader needs to understand sensitivity; bisection finds one exact value fast. Give both: the table for the reader, the exact rate for the record.
+- **Speed.** Each projection runs a few hundred months, so forty runs take well under a second; for thousands of scenarios, vectorise the projection or cache results.
+- **Going further.** Repeat the grid with `cdr=0.02`: defaults also repay Class A in this model (Chapter 16, Exercise 8), so the CPR needed for four years falls to 11.69%.

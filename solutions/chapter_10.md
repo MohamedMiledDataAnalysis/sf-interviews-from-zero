@@ -2,7 +2,66 @@
 
 ## Corrections
 
-### Exercise 1: SMM and CPR
+### Exercise 1: original, current and indexed LTV
+
+#### What the question asks
+
+> A loan of £270,000 was made on a house valued at £300,000. The balance is now £240,000 and the house price index has risen 25% since. Calculate the original, current and indexed LTVs.
+
+In plain words: three versions of the loan-to-value ratio for one loan. Each one pairs a balance (at origination or today) with a value (at origination or updated by the index).
+
+The exercise uses the three LTVs of Section 10.3, *Loan-to-value (LTV): three versions*: original LTV = original balance ÷ original value; current LTV = current balance ÷ original value; indexed LTV = current balance ÷ indexed value.
+
+#### The plan
+
+1. **Write the four inputs** with their dates: balance then and now, value then and now.
+2. **Compute the indexed value** from the index change, since it is not given directly.
+3. **Pair each balance with its value** for the three ratios.
+4. **Check the order** of the three results against what happened to the balance and to prices.
+
+#### Step by step
+
+**Step 1: inputs.** Original balance £270,000; current balance £240,000; original valuation £300,000; house prices up 25% since origination.
+
+**Step 2: the indexed value.** £300,000 × 1.25 = **£375,000**. The index rose 25%, so the property's estimated value is 125% of its original value.
+
+**Step 3: the three ratios.**
+
+| LTV | Balance | Value | Result |
+|---|---:|---:|---:|
+| Original | 270,000 | 300,000 | **90.0%** |
+| Current | 240,000 | 300,000 | **80.0%** |
+| Indexed | 240,000 | 375,000 | **64.0%** |
+
+- Original: £270,000 ÷ £300,000 = 0.90.
+- Current: £240,000 ÷ £300,000 = 0.80.
+- Indexed: £240,000 ÷ £375,000 = 0.64.
+
+#### Reading the result
+
+- **The borrower's equity has grown from 10% to 36% of today's value.** At origination it was £30,000 (£300,000 − £270,000); today it is £135,000 (£375,000 − £240,000).
+- **Two causes, each visible in one step.** Repayments of £30,000 take the LTV from 90% to 80% (original to current); the 25% price rise takes it from 80% to 64% (current to indexed).
+- **Indexed LTV is the one that measures risk today.** If the loan defaulted now, the sale would be based on today's price, not the price at origination. Chapter 11 uses it to estimate the loss (LGD from LTV, Section 11.3).
+
+#### Checking your answer
+
+- **The order makes sense.** Indexed ≤ current ≤ original here, because the balance fell and prices rose. If prices had fallen, indexed LTV would be above current LTV.
+- **Indexed LTV by another route.** Current LTV ÷ index factor = 80% ÷ 1.25 = 64%.
+- **On the tape.** The tape's stored `indexed_ltv` must equal `current_balance ÷ indexed_valuation`; Chapter 15's consistency rule checks exactly this, and finds ASH100357 where it does not.
+
+#### Mistakes people make on this exercise
+
+- **Calling £240,000 ÷ £375,000 the current LTV.** "Current" refers to the balance only; the value is still the original one.
+- **Dividing the original balance by the indexed value** (£270,000 ÷ £375,000 = 72%): a ratio of two figures from different dates that measures nothing.
+- **Adding 25 percentage points to the value instead of 25%.** The index rose by 25%, so the value is multiplied by 1.25, not increased by a fixed amount.
+
+#### Trade-offs and going further
+
+- **Index or valuation.** The indexed value uses a regional house price index, not a valuation of this house. It is cheap and updated every month, but can be wrong for one property; across a pool of 1,200 loans the errors average out, which is why reports use it.
+- **Which LTV to report.** Prospectuses show original and indexed LTV strats; current LTV is rarely shown, because it mixes today's balance with an old value.
+- **Going further.** If prices now fall 20% from today's level, the indexed value becomes £300,000 and the indexed LTV returns to 80%: the borrower's gain from the rise is wiped out, but the loan is still below its original 90%.
+
+### Exercise 2: SMM and CPR
 
 #### What the question asks
 

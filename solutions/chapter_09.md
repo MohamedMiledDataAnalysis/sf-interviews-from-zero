@@ -104,3 +104,62 @@ print(r["Excess spread"], r["Closing reserve"],
 - **A reserve in revenue, or a separate reserve.** Ashcombe adds the reserve to available revenue, so it can pay anything above it in the waterfall, including the PDL. Some deals let the reserve pay only senior fees and senior interest (a liquidity reserve); then the loss would stay on the PDL and Class A would close higher. Read the definition of Available Revenue in the documents.
 - **One bad month against a trend.** One shortfall of £9,729 is harmless. Repeated shortfalls drain the reserve and leave nothing for the next loss. Surveillance analysts watch the reserve balance against its target for exactly that reason.
 - **Going further.** What revenue would make excess spread exactly zero in this month? Revenue = £30,000 + £49,354 + £762,375 + £168,000 = **£1,009,729**.
+
+### Exercise 2: clearing a PDL with excess spread
+
+#### What the question asks
+
+> In month 2 without a reserve fund, the £220,123 Class B PDL is outstanding. In month 3, excess spread is £45,000 and there are no new losses. How much of the PDL is cleared, and what is left?
+
+In plain words: in the version of month 2 with no reserve fund (Section 9.6), revenue could clear only £39,877 of the £260,000 loss, so £220,123 stayed on the Class B PDL. In month 3 there is £45,000 left after items 1 to 5. Follow that money down the waterfall and say what happens to the PDL.
+
+The exercise uses the revenue waterfall's order (Section 9.2), the PDL and how it is cleared (Section 9.4), the no-reserve example (Section 9.6), and excess spread (Chapter 8, Section 8.6): revenue left after senior costs and note interest.
+
+#### The plan
+
+1. **Find what reaches item 6.** With no reserve and no new loss, items 4 (Class A PDL) and the new part of item 6 are zero; the £45,000 left after items 1 to 5 all reaches the Class B PDL.
+2. **Apply it to the outstanding PDL.**
+3. **Follow the cleared amount into the principal waterfall**, because a PDL credit is principal.
+4. **Check** with the gap between notes and pool.
+
+#### Step by step
+
+**Step 1: what reaches item 6.**
+
+- Items 1 to 5 (expenses, fee, Class A interest, Class A PDL, Class B interest) are paid in full from revenue.
+- £45,000 is left. Item 4 is £0, because Class A has no PDL.
+- Item 6 is due £220,123: the PDL carried from month 2, plus £0 of new losses.
+
+**Step 2: clear it.**
+
+- Paid to item 6: the smaller of £45,000 and £220,123 = **£45,000**.
+- PDL outstanding after month 3: £220,123 − £45,000 = **£175,123**.
+- Item 7 (reserve) and item 8 (residual) receive nothing; in this version there is no reserve to refill.
+
+**Step 3: where the £45,000 goes.** It is credited to the principal waterfall, alongside month 3's principal receipts, and repays **Class A**: the deal is sequential, so all principal goes to Class A first.
+
+**Step 4: months to clear.** At £45,000 a month with no new losses: £175,123 ÷ £45,000 = 3.9, so **four more months**; month 7 clears the last £40,123.
+
+#### Reading the result
+
+- **Excess spread is the first defence and also the repair.** In month 2 it was too small to absorb the loss; from month 3 it rebuilds the protection, £45,000 a month.
+- **Class B is not paid less interest.** Item 5 is paid in full in month 3; the PDL is a gap in principal backing, not a missed coupon.
+- **The originator waits.** The residual holder receives nothing until the PDL is cleared: the investors are made whole first.
+
+#### Checking your answer
+
+- **Notes minus pool.** Before month 3, notes exceed the pool by £220,123, the PDL. In month 3 the pool falls by principal receipts only (no losses); the notes fall by principal receipts plus the £45,000 credit. The gap shrinks to **£175,123**, exactly the PDL still outstanding.
+- **The waterfall pays out what it has.** Items 1 to 5 plus £45,000 to item 6 equal available revenue; nothing is left over.
+- **In the workbook.** On the Chapter 16 Waterfall sheet, set B6 (reserve) to 0, B7 (revenue) to 1,043,123 so that D22 shows £45,000 after items 1 to 5, and B9 to 220,123 to stand for the PDL brought forward: C23 pays £45,000 and C41 shows £175,123.
+
+#### Mistakes people make on this exercise
+
+- **Writing the PDL off against Class B's balance.** In Ashcombe, a PDL is a ledger, not a write-down; Class B's balance stays £33.6m, and the PDL is cleared over time or, at the end of the deal, written off.
+- **Paying the £45,000 to Class B.** The cleared amount enters the principal waterfall, and principal is sequential: it goes to Class A.
+- **Refilling a reserve.** The question removes the reserve; with one, item 7 would still come after item 6, so the PDL would be cleared first anyway.
+
+#### Trade-offs and going further
+
+- **Who pays for the repair.** The £45,000 would otherwise go to the residual holder, often the originator. Clearing the PDL first is the price of the investors' protection, and part of why originators prefer to keep the reserve funded.
+- **Reserve or no reserve.** With the £2,383,271 reserve of the main example, the PDL never appeared; without it, the deal needs about five months of excess spread to recover. The reserve buys time.
+- **Going further.** If month 4 brings a new £60,000 loss and £45,000 of excess spread, the PDL rises to £175,123 + £60,000 − £45,000 = £190,123: losses faster than excess spread make the PDL grow.

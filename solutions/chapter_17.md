@@ -2,7 +2,149 @@
 
 ## Corrections
 
-### Exercise 1: a balance-size strat with CASE
+### Exercise 1: loans and balance by occupancy
+
+#### What the question asks
+
+> Write a query for the number and balance of loans by `occupancy`.
+
+In plain words: one row for each occupancy type in the tape (owner-occupied, buy-to-let), with how many loans it has and their total current balance.
+
+The exercise uses `GROUP BY` with `COUNT(*)` and `SUM` (Section 17.3), and the table `dbo.loan_tape` described in Section 17.1.
+
+#### The plan
+
+1. **Group by the column that defines a row of the answer**, `occupancy`: one group per value.
+2. **Aggregate inside each group**: count the rows and add the balances.
+3. **Name the output columns**, so the result reads like a report.
+4. **Check the groups add back to the pool**: 1,200 loans and £240,000,000.
+
+#### Step by step
+
+```sql
+SELECT occupancy,
+       COUNT(*) AS loans,
+       SUM(current_balance) AS balance
+FROM dbo.loan_tape
+GROUP BY occupancy
+ORDER BY occupancy;
+```
+
+- `FROM dbo.loan_tape` reads the 1,200 rows of the tape.
+- `GROUP BY occupancy` sorts them into groups, one per distinct value of `occupancy`. Every column in the `SELECT` must now be either the grouping column or an aggregate.
+- `COUNT(*)` counts the rows in each group; `SUM(current_balance)` adds their balances.
+- `AS loans` and `AS balance` name the columns; without them SQL Server shows "(No column name)".
+- `ORDER BY occupancy` fixes the row order. Without it, SQL returns groups in whatever order is fastest, which can change between runs.
+
+The result:
+
+| occupancy | loans | balance |
+|---|---:|---:|
+| Buy-to-let | **216** | **46,245,021** |
+| Owner-occupied | **984** | **193,754,979** |
+
+#### Reading the result
+
+- **Buy-to-let is 18% of the loans and 19.3% of the balance.** Its loans are slightly larger on average: £214,097 against £196,905 for owner-occupied.
+- **The split matters to investors.** Buy-to-let loans are repaid from rent, not salary, and 85.7% of them (by balance) are interest-only, against 6.9% of owner-occupied loans. Prospectuses show this line first in the occupancy strat.
+- **Only two values appear**, so the field is clean: no misspellings, no blanks. A third row, such as "BTL" or NULL, would be a data quality finding.
+
+#### Checking your answer
+
+- **The groups add up.** 216 + 984 = 1,200 loans; £46,245,021 + £193,754,979 = £240,000,000, the totals of `SELECT COUNT(*), SUM(current_balance) FROM dbo.loan_tape`.
+- **The same figure elsewhere.** The Metrics sheet of the Chapter 16 workbook shows the buy-to-let balance in B12: £46,245,021.
+- **No NULL group.** `SELECT COUNT(*) FROM dbo.loan_tape WHERE occupancy IS NULL` returns 0; if it did not, `GROUP BY` would show a NULL row.
+
+#### Mistakes people make on this exercise
+
+- **Leaving out `GROUP BY`.** `SELECT occupancy, COUNT(*) FROM dbo.loan_tape` fails in SQL Server with Msg 8120 (Exercise 7 explains why).
+- **`COUNT(occupancy)` instead of `COUNT(*)`.** It skips rows where occupancy is NULL; here the result is the same, but on a dirty tape the loans with a blank occupancy vanish from the count without warning.
+- **Grouping by a second column by accident.** `GROUP BY occupancy, region` returns 24 rows instead of 2; check that the row count matches the number of values you expect.
+
+#### Trade-offs and going further
+
+- **Add the share in the same query.** `100.0 * SUM(current_balance) / SUM(SUM(current_balance)) OVER () AS pct_of_pool` gives 19.27% and 80.73%. It is compact, but a window over an aggregate surprises readers who have not met it; a CTE with the total in a separate step is easier to read.
+- **Count or balance.** Investors read balances; operations teams read counts. Showing both costs one line.
+- **Going further.** Add `AVG(current_balance) AS avg_balance` and `SUM(interest_rate * current_balance) / SUM(current_balance) AS wa_rate` to the same query: a one-query occupancy strat.
+
+### Exercise 2: original LTV above 90%, largest first
+
+#### What the question asks
+
+> Write a query listing loans with an **original** LTV above 90%, largest balance first.
+
+In plain words: a list of the loans that were made with less than a 10% deposit, sorted so that the largest balances, where the risk is concentrated, come first.
+
+The exercise uses `WHERE`, `ORDER BY` and column selection (Section 17.2), and the original LTV of Chapter 10 (Section 10.3). LTVs are stored as decimals: 0.90 means 90%.
+
+#### The plan
+
+1. **Choose the columns** the reader needs to act on: ID, the LTV that triggered the filter, the balance.
+2. **Filter** with `original_ltv > 0.90`, strictly above, as the question says.
+3. **Sort** by `current_balance` from largest to smallest.
+4. **Count and total the list** with a second query, so the list can be summarised in one line.
+
+#### Step by step
+
+```sql
+SELECT loan_id, original_ltv, current_balance
+FROM dbo.loan_tape
+WHERE original_ltv > 0.90
+ORDER BY current_balance DESC;
+```
+
+- `SELECT loan_id, original_ltv, current_balance` returns three columns only: a list for a reviewer, not a full extract.
+- `WHERE original_ltv > 0.90` keeps loans strictly above 90%. The tape has no loan at exactly 0.90, so `>=` gives the same 111 rows here, but the question says "above".
+- `ORDER BY current_balance DESC` puts the largest first; `DESC` means descending.
+
+The first rows:
+
+| loan_id | original_ltv | current_balance |
+|---|---:|---:|
+| ASH100499 | 0.9480 | 607,409 |
+| ASH100653 | 0.9307 | 538,556 |
+| ASH100826 | 0.9170 | 345,947 |
+
+The list has **111 rows**; the last is ASH100258 (£43,126).
+
+Then the summary:
+
+```sql
+SELECT COUNT(*) AS loans,
+       SUM(current_balance) AS balance,
+       MAX(original_ltv) AS highest_ltv
+FROM dbo.loan_tape
+WHERE original_ltv > 0.90;
+```
+
+Result: **111 loans, £20,410,799**, highest original LTV **95.12%**.
+
+#### Reading the result
+
+- **8.5% of the pool by balance was lent above 90% LTV.** These borrowers had little equity at the start, so a fall in house prices could put them in negative equity.
+- **Only one loan is above 95%, at 95.12%.** A 95% maximum LTV is the usual ceiling for UK prime lending; the single loan above it is worth a question to the originator.
+- **The largest, ASH100499 (£607,409 at 94.80%), is also the sixth-largest loan in the pool.** A large, high-LTV loan is the first one a credit reviewer looks at.
+- **Original LTV describes the start.** Many of these loans have since repaid and prices have risen; their indexed LTV is lower. A risk review would add `indexed_ltv` to the list.
+
+#### Checking your answer
+
+- **The summary query agrees with the list**: 111 rows in the list, 111 in the count.
+- **The edge.** `SELECT COUNT(*) FROM dbo.loan_tape WHERE original_ltv = 0.90` returns 0, so `>` and `>=` agree on this tape; on another tape they may not.
+- **The LTV strat.** The original LTV strat (if built with an "Over 90%" band) shows the same count and balance in its top band.
+
+#### Mistakes people make on this exercise
+
+- **`WHERE original_ltv > 90`.** LTVs are decimals, so no loan passes and the query returns an empty list, with no error to warn you.
+- **Using `indexed_ltv`.** The question asks for the LTV at origination; indexed LTV above 90% gives a much shorter list.
+- **Forgetting `DESC`.** The default order is ascending, so the smallest loan, £43,126, comes first.
+
+#### Trade-offs and going further
+
+- **A list or a strat.** A list is right when someone will review loans one by one; a report needs the LTV strat, which shows the same information in six rows. Give the list a summary line so both readers are served.
+- **`TOP` for a long list.** `SELECT TOP 20 …` (SQL Server) or `LIMIT 20` (SQLite) shows the twenty largest; say in the output that the list is cut.
+- **Going further.** Add `indexed_ltv` and the filter `AND indexed_ltv > 0.80`: the high-LTV loans that are still high today, the real risk.
+
+### Exercise 3: a balance-size strat with CASE
 
 #### What the question asks
 
@@ -163,7 +305,300 @@ every loan up to £500,000 stops at the first line. The result has two rows: 1,1
 - **Subquery or CTE.** A CTE (`WITH b AS (SELECT …) SELECT … FROM b GROUP BY …`, Section 17.6) does exactly the same as the subquery and reads top to bottom. Use whichever your team uses; in an interview, either is right.
 - **Going further.** Add a total row with `GROUP BY ROLLUP(size_bucket)` (Section 17.14) and label it with `GROUPING(size_bucket)`. You then have the complete investor-report table in one query, total included.
 
-### Exercise 2: up to date in April, 2+ behind in June
+### Exercise 4: WA interest rate by rate type
+
+#### What the question asks
+
+> Write a query that returns, for each `rate_type`, the balance-weighted average interest rate.
+
+In plain words: one row for each rate type (Fixed, SVR, Tracker) with the average interest rate weighted by balance, so that large loans count more than small ones.
+
+The exercise uses `GROUP BY` and aggregates (Section 17.3), the weighted average of Chapter 10 (Section 10.1), and the 53.7% keying error on ASH100602 found in Chapter 15.
+
+#### The plan
+
+1. **Write the weighted average as two sums**: Σ(rate × balance) ÷ Σ(balance). SQL has no weighted-average function, but two sums do the job.
+2. **Group by `rate_type`**, so each sum is computed per group.
+3. **Round for display**, not inside the calculation.
+4. **Check the effect of the known error** by recomputing with the corrected rate.
+
+#### Step by step
+
+```sql
+SELECT rate_type,
+       COUNT(*) AS loans,
+       SUM(interest_rate * current_balance)
+         / SUM(current_balance) AS wa_rate
+FROM dbo.loan_tape
+GROUP BY rate_type
+ORDER BY rate_type;
+```
+
+- `interest_rate * current_balance` is computed row by row: the rate weighted by the loan's size.
+- `SUM(...)` adds those products within each group; dividing by `SUM(current_balance)` turns the sum into an average.
+- Both sums are over the same rows, so the division is safe: no group has a zero balance.
+- `COUNT(*)` adds the number of loans, which helps the reader judge each figure.
+
+The result:
+
+| rate_type | loans | wa_rate |
+|---|---:|---:|
+| Fixed | 853 | **5.175%** |
+| SVR | 144 | **7.247%** |
+| Tracker | 203 | **5.245%** |
+
+#### Reading the result
+
+- **SVR loans pay the most, 7.25%.** The standard variable rate is the lender's own rate, charged when a fixed or tracker deal ends; borrowers on it are usually those who did not or could not remortgage.
+- **Fixed and Tracker are close.** Both are deal rates offered to win business.
+- **The Fixed figure is overstated.** It includes ASH100602, keyed as 53.7% instead of 5.37%. That one £218,596 loan lifts Fixed's WA rate by 0.062 percentage points.
+
+#### Checking your answer
+
+- **Recompute with the correction**, without changing the table:
+
+```sql
+SELECT SUM(CASE WHEN loan_id = 'ASH100602' THEN 0.0537
+                ELSE interest_rate END * current_balance)
+       / SUM(current_balance) AS wa_rate_fixed_corrected
+FROM dbo.loan_tape
+WHERE rate_type = 'Fixed';
+```
+
+Result: **5.112%**. Unrounded, the two figures are 5.1747% and 5.1124%: the difference, 0.0623 percentage points, equals (0.537 − 0.0537) × £218,596 ÷ £169,638,911.
+
+- **The groups average to the pool.** Weighted by group balance, (5.175% × £169.6m + 7.247% × £29.8m + 5.245% × £40.6m) ÷ £240m = 5.444%, the pool's WA rate in Section 17.3.
+
+#### Mistakes people make on this exercise
+
+- **`AVG(interest_rate)`.** It gives the simple average (Fixed 5.171%): close here, but a different measure, and the one interviewers ask you to avoid.
+- **`SUM(interest_rate) * SUM(current_balance)`.** Multiplying the sums instead of summing the products gives a meaningless number.
+- **Integer arithmetic.** If rates were stored as whole basis points (`INT`), SQL Server would divide integers and truncate. Multiply by `1.0` first when in doubt.
+
+#### Trade-offs and going further
+
+- **Correct the data or exclude the loan.** Excluding ASH100602 gives 5.112% too, but drops a real loan from the pool; correcting it keeps every balance. The report needs the corrected figure, with an exceptions log entry.
+- **Ratios in SQL or in the report.** Computing the division in SQL keeps one source of truth; exporting the two sums lets Excel recompute any grouping. For a monthly report, keep it in SQL.
+- **Going further.** Add `GROUP BY rate_type, repayment_type`: nine rows, and SVR interest-only loans show the highest rate of all.
+
+### Exercise 5: the three largest loans in each region
+
+#### What the question asks
+
+> Using a window function, list the **three** largest loans in each region.
+
+In plain words: for every region, the three loans with the highest balance, with their rank. It is the "top N per group" question, one of the most common in SQL interviews.
+
+The exercise uses window functions, `ROW_NUMBER()` with `PARTITION BY` and `ORDER BY` (Section 17.7), and subqueries (Section 17.6). It also meets the dirty region values of Chapter 15.
+
+#### The plan
+
+1. **Number the loans within each region** from largest to smallest, with `ROW_NUMBER()`.
+2. **Filter on that number in an outer query**, because a window's result cannot be used in the same query's `WHERE`.
+3. **Sort the output** by region and rank.
+4. **Count the rows** and explain the count from the number of regions.
+
+#### Step by step
+
+```sql
+SELECT region, loan_id, current_balance, rn
+FROM (
+    SELECT region, loan_id, current_balance,
+           ROW_NUMBER() OVER (PARTITION BY region
+                              ORDER BY current_balance DESC) AS rn
+    FROM dbo.loan_tape
+) AS x
+WHERE rn <= 3
+ORDER BY region, rn;
+```
+
+- The inner query reads every loan and adds `rn`.
+- `PARTITION BY region` restarts the numbering at 1 for each region.
+- `ORDER BY current_balance DESC` inside `OVER` gives 1 to the largest loan of the region.
+- `AS x` names the subquery; SQL Server requires a name.
+- The outer `WHERE rn <= 3` keeps the first three of each region; `ORDER BY region, rn` lists them in order.
+
+The first rows in SQL Server:
+
+| region | loan_id | current_balance | rn |
+|---|---|---:|---:|
+| East Midlands | ASH101197 | 495,966 | 1 |
+| East Midlands | ASH101044 | 440,807 | 2 |
+| East Midlands | ASH101027 | 375,282 | 3 |
+| East of England | ASH100772 | 758,161 | 1 |
+
+In total, **34 rows** in SQL Server.
+
+#### Reading the result
+
+- **Why 34.** The tape has eleven standard regions, plus "Greater London" with one loan: 11 × 3 + 1 = 34. SQL Server's default collation ignores case and trailing spaces, so "London", "london" and `"London "` form one partition.
+- **The largest loan in the pool, ASH100881 (£840,940), heads London**, and the second-largest, ASH100772, heads the East of England. The top of each region is where concentration risk sits.
+- **A one-loan "region" is a data finding.** "Greater London" appears as its own partition; it should be mapped to London (Chapter 15, Section 15.5).
+
+#### Checking your answer
+
+- **Each region has at most three rows**, numbered 1, 2, 3 with no gaps.
+- **One region by hand.** `SELECT TOP 3 loan_id, current_balance FROM dbo.loan_tape WHERE region = 'South East' ORDER BY current_balance DESC` returns the same three loans as the South East rows of the result.
+- **SQLite gives 36 rows.** SQLite compares text exactly, so "london" and `"London "` are separate one-loan partitions: 34 + 2 = 36. The difference between the two engines is itself a check that the region field is dirty.
+
+#### Mistakes people make on this exercise
+
+- **Filtering `rn` in the same query.** `WHERE ROW_NUMBER() OVER (…) <= 3` fails: window functions are computed after `WHERE`. The subquery (or a CTE) is required.
+- **Forgetting `PARTITION BY`.** The numbering then runs over the whole pool, and `rn <= 3` returns the three largest loans overall.
+- **`ORDER BY current_balance` without `DESC` inside `OVER`.** The three smallest loans of each region come back.
+
+#### Trade-offs and going further
+
+- **`ROW_NUMBER`, `RANK` or `DENSE_RANK`.** `ROW_NUMBER` always returns three rows and breaks ties arbitrarily; `RANK` keeps tied loans and can return four. For a top-three list, `ROW_NUMBER` with a tie-breaker (`ORDER BY current_balance DESC, loan_id`) is repeatable.
+- **Subquery or CTE.** A CTE (`WITH ranked AS (…) SELECT … FROM ranked WHERE rn <= 3`) reads top to bottom and is easier to extend; the result is the same.
+- **Going further.** Clean the region inside the query, `PARTITION BY UPPER(TRIM(region))`, and SQLite returns 34 rows as SQL Server does.
+
+### Exercise 6: arrears differences between tape and servicer
+
+#### What the question asks
+
+> Write a query that finds loans whose `arrears_months` differ between the tape and the servicer's table.
+
+In plain words: compare the months in arrears of each loan in two sources, the loan tape and the servicer's extract, and list the loans where they disagree.
+
+The exercise uses joins (Section 17.5), the reconciliation method of Chapter 15 (Section 15.4: keys first, then values), and `NULL` behaviour (Section 17.12). The servicer's table is `dbo.servicer_balances`, with `loan_id`, `current_balance` and `arrears_months`.
+
+#### The plan
+
+1. **Join the two tables on `loan_id`**, so each loan's two values sit on one row.
+2. **Keep rows where the values differ.**
+3. **Read an empty result with care**: check how many rows were compared before concluding they all agree.
+4. **Remember the keys**: an inner join silently drops loans that are in one table only.
+
+#### Step by step
+
+```sql
+SELECT t.loan_id,
+       t.arrears_months AS tape_arrears,
+       s.arrears_months AS servicer_arrears
+FROM dbo.loan_tape AS t
+JOIN dbo.servicer_balances AS s
+  ON s.loan_id = t.loan_id
+WHERE t.arrears_months <> s.arrears_months;
+```
+
+- `t` and `s` are short names (aliases) for the two tables; every column is then written with its table, so there is no doubt which `arrears_months` is which.
+- `JOIN … ON s.loan_id = t.loan_id` pairs each tape row with the servicer row for the same loan.
+- `WHERE t.arrears_months <> s.arrears_months` keeps only disagreements.
+
+Result: **no rows**.
+
+Then count what was compared:
+
+```sql
+SELECT COUNT(*) AS rows_compared
+FROM dbo.loan_tape AS t
+JOIN dbo.servicer_balances AS s
+  ON s.loan_id = t.loan_id;
+```
+
+Result: **1,200** rows.
+
+#### Reading the result
+
+- **Arrears agree for every matched loan.** The differences between the two sources found in Chapter 15 are in balances (ASH100500 and ASH100501, ±£1,250) and in keys (ASH100213 used twice), not in arrears.
+- **1,200 compared rows do not mean 1,200 loans.** The tape has ASH100213 twice; both rows join to the one servicer row, and ASH100888, in the servicer's file only, is not compared at all. The comparison is complete only after the key reconciliation (Section 17.5, query 4.3).
+
+#### Checking your answer
+
+- **Reverse the condition.** With `=` instead of `<>` the count is 1,200: every compared row agrees.
+- **NULLs.** `SELECT COUNT(*) FROM dbo.loan_tape WHERE arrears_months IS NULL` and the same on the servicer's table both return 0, so `<>` missed nothing.
+- **Break it on purpose.** In a transaction, `UPDATE dbo.servicer_balances SET arrears_months = 2 WHERE loan_id = 'ASH100001'`, rerun the query (one row appears), then `ROLLBACK`.
+
+#### Mistakes people make on this exercise
+
+- **Concluding "the files agree" from an empty result.** The inner join hides ASH100888 and doubles ASH100213; say "arrears agree for every loan in both files".
+- **`<>` with NULLs.** `2 <> NULL` is not true, it is unknown, so a loan blank on one side is not listed. On a tape with blanks, add `OR (t.arrears_months IS NULL AND s.arrears_months IS NOT NULL) OR (t.arrears_months IS NOT NULL AND s.arrears_months IS NULL)`.
+- **Joining without aliases.** `WHERE arrears_months <> arrears_months` fails as ambiguous, or worse, compares a column with itself.
+
+#### Trade-offs and going further
+
+- **Column by column or all at once.** This query checks one field. `SELECT loan_id, current_balance, arrears_months FROM dbo.servicer_balances EXCEPT SELECT loan_id, current_balance, arrears_months FROM dbo.loan_tape` checks every shared field at once (Section 17.14) and treats NULLs as equal, but does not say which field differs.
+- **`IS DISTINCT FROM`.** SQL Server 2022 and SQLite accept `WHERE t.arrears_months IS DISTINCT FROM s.arrears_months`, which handles NULLs in one condition; older SQL Server versions do not.
+- **Going further.** Combine both checks in one query with a `FULL OUTER JOIN` and a `CASE` that labels each row "tape only", "servicer only", "balance differs" or "arrears differ".
+
+### Exercise 7: why the query fails
+
+#### What the question asks
+
+> Explain why `SELECT region, SUM(current_balance) FROM dbo.loan_tape` fails, and fix it.
+
+In plain words: this query asks for a region and a total in the same row, without saying how to group. Explain the rule it breaks, show the error, and write the query the author meant.
+
+The exercise uses the rule of aggregation (Section 17.3): in a query with an aggregate, every selected column must be either grouped or aggregated. It is one of the questions asked most often in SQL interviews.
+
+#### The plan
+
+1. **Read what the query asks for**: one total over the whole table, and a region next to it.
+2. **Find the conflict**: there are 14 region values and one total; SQL cannot know which region to show.
+3. **Read the error message** SQL Server gives.
+4. **Fix it** by deciding what the author meant: a total per region.
+
+#### Step by step
+
+**Step 1: run it.** In SQL Server:
+
+```
+Msg 8120, Level 16, State 1
+Column 'dbo.loan_tape.region' is invalid in the select list because
+it is not contained in either an aggregate function or the GROUP BY clause.
+```
+
+- `SUM(current_balance)` without `GROUP BY` collapses all 1,200 rows into **one** row.
+- `region` has a different value on almost every row; SQL Server refuses to pick one.
+
+**Step 2: the fix.**
+
+```sql
+SELECT region, SUM(current_balance) AS balance
+FROM dbo.loan_tape
+GROUP BY region
+ORDER BY balance DESC;
+```
+
+- `GROUP BY region` makes one row per region, and the sum is computed within each.
+- `ORDER BY balance DESC` puts the largest region first; ordering by the alias is allowed because `ORDER BY` runs after `SELECT`.
+
+The first rows (SQL Server):
+
+| region | balance |
+|---|---:|
+| South East | 46,352,048 |
+| London | 39,115,642 |
+| North West | 24,407,347 |
+
+SQL Server returns **12 rows**: the case-insensitive collation joins "London", "london" and `"London "` into one group, so London shows £39,115,642. "Greater London" (£293,586) stays separate.
+
+#### Reading the result
+
+- **The rule protects you from a wrong number.** An engine that picked a region at random would print a pool total next to one region's name, a figure that looks plausible and is false.
+- **SQLite does not stop you.** In SQLite the original query runs and returns one row: `London | 240000000.0`, the pool total next to an arbitrary region. That is the dangerous case: no error, wrong meaning.
+- **The fixed query is the region strat**: the South East is the largest region (19.3% of the pool), then London.
+
+#### Checking your answer
+
+- **The groups add up.** `SELECT SUM(balance) FROM (…) AS r` around the fixed query returns £240,000,000.
+- **Row count.** 12 rows in SQL Server, 14 in SQLite (where "london" and `"London "` are separate groups); `SELECT COUNT(DISTINCT region) FROM dbo.loan_tape` returns the same number in each engine.
+- **London in SQLite.** The exact value "London" holds £38,749,038; adding "london" (£222,329) and `"London "` (£144,275) gives SQL Server's £39,115,642.
+
+#### Mistakes people make on this exercise
+
+- **Fixing it with `MAX(region)`.** The query runs, but shows "Yorkshire and the Humber" next to the pool total: an answer to a question nobody asked.
+- **Putting the condition in `WHERE`.** `WHERE region = 'London'` with no `GROUP BY` gives London's total, but only because the select list then shows a constant; it does not answer "by region".
+- **Explaining the error as a syntax error.** The syntax is valid; the meaning is not. Interviewers want the rule: grouped or aggregated.
+
+#### Trade-offs and going further
+
+- **Strict engines or lenient ones.** SQL Server and PostgreSQL refuse the query; SQLite and older MySQL versions accept it. Write queries that are valid in the strict engines, and they run correctly everywhere.
+- **Clean before grouping.** `GROUP BY UPPER(TRIM(region))` gives the same 12 groups in every engine, but displays upper-case names; a mapping table gives clean names.
+- **Going further.** Add `HAVING SUM(current_balance) > 20000000` to list only regions above £20m, and explain why that condition cannot go in `WHERE`.
+
+### Exercise 8: up to date in April, 2+ behind in June
 
 #### What the question asks
 
@@ -255,7 +690,7 @@ The list has **12 loans**, from ASH100073 to ASH100990, every one 2 months behin
 - **Counting loans or balance.** The count shows how many borrowers are in difficulty; the balance (£2.9 million, 1.2% of the pool) shows how much money. Reports show both.
 - **Going further.** Change the June condition to `>= 1` to count all loans that were up to date in April and behind in June: the answer is **55**, which adds the 43 loans that missed only one payment.
 
-### Exercise 3: buy-to-let up to 75% indexed LTV in the pool cut
+### Exercise 9: buy-to-let up to 75% indexed LTV in the pool cut
 
 #### What the question asks
 

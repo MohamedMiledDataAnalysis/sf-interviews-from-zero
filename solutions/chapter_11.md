@@ -80,3 +80,61 @@ B7: =B6/B1
 - **A simple formula against a full model.** The formula ignores the months between default and sale, during which interest accrues unpaid and the property may need maintenance. Rating agencies add a foreclosure period and its costs to their stresses, which raises the LGD above this calculation.
 - **Indexed valuation against a real sale.** The indexed valuation uses a regional price index, not a survey of this house. A repossessed house often sells below the index (a forced-sale discount), which is one reason stress scenarios use falls larger than any seen in history.
 - **Going further.** Under the same 30% fall and 8% costs, what indexed LTV produces an LGD of exactly zero? 0.70 × 0.92 = 0.644, so any loan with an indexed LTV of **64.4%** or less loses nothing.
+
+### Exercise 2: roll rate and cure rate
+
+#### What the question asks
+
+> Of 40 loans 2 months in arrears last month, 14 are now 3+ months in arrears and 18 are up to date. Calculate the roll rate and cure rate.
+
+In plain words: follow one group of loans, the 40 that were two months behind last month, and say what share got worse (rolled to 3 months or more) and what share caught up completely (cured).
+
+The exercise uses roll rates and cure rates, the measures of Section 11.8, *Monitoring credit risk each month*, and the arrears buckets of Chapter 10 (Section 10.6).
+
+#### The plan
+
+1. **Fix the starting group**: last month's 2-month bucket, 40 loans. Every rate is a share of this group.
+2. **Roll rate** = loans that moved to the next worse bucket ÷ starting loans.
+3. **Cure rate** = loans now up to date ÷ starting loans.
+4. **Account for the rest**, so the three outcomes add up to 40.
+
+#### Step by step
+
+**Step 1: the starting group.** 40 loans were 2 months in arrears last month.
+
+**Step 2: the roll rate.** 14 of them are now 3+ months in arrears: 14 ÷ 40 = **35%**.
+
+**Step 3: the cure rate.** 18 are now up to date: 18 ÷ 40 = **45%**.
+
+**Step 4: the rest.** 40 − 14 − 18 = **8 loans (20%)** are still 2 months behind or have improved to 1 month.
+
+| Outcome this month | Loans | Share of the 40 |
+|---|---:|---:|
+| Rolled to 3+ months | 14 | 35% |
+| Cured (up to date) | 18 | 45% |
+| Still 1 or 2 months | 8 | 20% |
+| **Total** | **40** | **100%** |
+
+#### Reading the result
+
+- **More loans cured than rolled**, which is common: many arrears are temporary (a late salary, a changed bank account).
+- **A 35% roll from 2 to 3+ months is high.** Section 11.8's example shows a 21.6% roll from 1 to 2 months; roll rates usually rise in the deeper buckets, because a borrower who has missed two payments is more likely to be in real difficulty. At 3+ months, the loan is close to the point where the servicer starts possession proceedings.
+- **For a forecast**, multiplying roll rates bucket by bucket estimates how many of today's 1-month cases will reach default: the roll-rate matrix of Chapter 16 (Section 16.15) and Chapter 18 (Section 18.8) does this with the whole history.
+
+#### Checking your answer
+
+- **The outcomes add up.** 14 + 18 + 8 = 40, and 35% + 45% + 20% = 100%.
+- **Same group, both rates.** Both rates divide by 40, last month's bucket. If a rate used this month's 3+ total (which also includes loans that were already 3+), the outcomes would not add to 100%.
+- **In the data.** The history file gives the same calculation for Ashcombe: count the loans at 2 months in May and see where each one is in June (Chapter 17, Section 17.10).
+
+#### Mistakes people make on this exercise
+
+- **Dividing by this month's 3+ bucket.** That bucket mixes loans that rolled in with loans already there; a roll rate always follows the same loans from one month to the next.
+- **Counting cures as any improvement.** A loan that moved from 2 months to 1 month has improved but not cured; "cure" means back to up to date.
+- **Reading a 45% cure rate as good news on its own.** It is good for those 18 loans; the 14 that rolled are the ones that drive losses.
+
+#### Trade-offs and going further
+
+- **Loans or balance.** Counting loans is simple and stable; weighting by balance shows the money at risk. A few large loans can move a balance-weighted roll rate a lot, so reports often show both.
+- **One month or an average.** A single month is noisy with 40 loans: one loan is 2.5 percentage points. Analysts average roll rates over three or six months before using them in a forecast.
+- **Going further.** If 35% of 2-month loans roll to 3+, and 60% of 3+ loans eventually default, about 21% of today's 2-month loans will default: 35% × 60%.

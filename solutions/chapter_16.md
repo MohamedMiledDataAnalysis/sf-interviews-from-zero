@@ -176,7 +176,291 @@ The result:
 
 - **Counts and balances in one table.** Some reports show only balances; investors also like the count, which reveals whether a band's balance comes from many small loans or a few large ones. Keeping both columns costs nothing and answers the follow-up question before it is asked.
 
-### Exercise 3: no-principal loans that are repayment loans
+### Exercise 3: TRIM on the Lookup sheet
+
+#### What the question asks
+
+> On the Lookup sheet, add a row that returns the loan's **region** with extra spaces removed by TRIM.
+
+In plain words: the Lookup sheet finds a loan by its ID and shows its balance, rate, region, arrears and LTV. Add one more row that shows the same region, cleaned of stray spaces, so that a loan typed as `"London "` reads `"London"`.
+
+The exercise uses the INDEX/MATCH lookup already on the sheet (Section 16.6), TRIM and the other text functions (Section 16.11), and the region errors found in Chapter 15 (Section 15.3): the tape has `"London "` with a trailing space, `"london"` in lower case and `"Greater London"`, besides the 188 loans spelled `"London"`.
+
+#### The plan
+
+1. **Reuse the region the sheet already finds** in B6, instead of writing a second lookup. One lookup, cleaned, is easier to check than two lookups.
+2. **Wrap it in TRIM**, which removes spaces at both ends and turns repeated inner spaces into one.
+3. **Test it on the loans that matter**: a clean region, the loan with the trailing space, and the loans TRIM cannot fix.
+4. **Prove the space was removed** with LEN, because a trailing space is invisible on screen.
+
+#### Step by step
+
+**Step 1: the label.** In A9 type "Region (TRIM)". Row 9 is empty; row 10 already holds the duplicate-ID check.
+
+**Step 2: the formula.** In B9:
+
+```
+=TRIM(B6)
+```
+
+- B6 holds `=IFNA(INDEX(Tape!$Q$2:$Q$1201,MATCH($B$2,Tape!$A$2:$A$1201,0)),"Not found")`: the raw region of the loan typed in B2.
+- `TRIM(B6)` returns the same text without leading or trailing spaces. Inner single spaces, as in "South East", are kept.
+- If B6 shows "Not found", TRIM returns "Not found" unchanged, so no extra error handling is needed.
+
+**Step 3: test three loans.** Type each ID in B2 and read B6 and B9:
+
+| Loan in B2 | B6 (raw) | B9 (TRIM) |
+|---|---|---|
+| ASH100602 | London | London |
+| ASH100411 | London␣ (trailing space) | London |
+| ASH100096 | london | london |
+
+The ␣ marks the space, which Excel does not show.
+
+**Step 4: show the space.** In C9 (or any free cell) type `=LEN(B6)` and `=LEN(B9)`. For ASH100411 they return **7** and **6**: the trailing space is gone. For ASH100602 both return 6.
+
+#### Reading the result
+
+- **TRIM fixes one kind of error only: spaces.** It turns `"London "` into `"London"`, so a SUMIFS that compares exactly would now count that loan with London.
+- **It does not fix case.** ASH100096 stays `"london"`. Excel's own comparisons ignore case (SUMIFS with "London" already counts it), but SQL Server with a case-sensitive collation, pandas and Python do not. `=PROPER(TRIM(B6))` returns "London" for both loans.
+- **It cannot fix a different name.** "Greater London" (ASH101151) is a valid-looking text that is not in the allowed list. Only a mapping table (Chapter 15, Section 15.5) turns it into "London", and someone must decide that the mapping is right.
+- **So the lookup row is a display fix.** It shows the reader the clean value of one loan; it does not change the region used by the Metrics and Strats sheets, which still read column Q of the Tape.
+
+#### Checking your answer
+
+- **LEN before and after**, as in Step 4: 7 and 6 for ASH100411.
+- **An exact comparison.** `=EXACT(B9,"London")` returns TRUE for ASH100411 and FALSE for ASH100096; `=EXACT(B6,"London")` returns FALSE for both. EXACT compares case and spaces, unlike `=`.
+- **Count the whole column.** In a spare cell, `=SUMPRODUCT(--(Tape!Q2:Q1201<>TRIM(Tape!Q2:Q1201)))` returns **1**: only one region in the tape has extra spaces, which matches Chapter 15's finding.
+
+#### Mistakes people make on this exercise
+
+- **Writing a second lookup inside TRIM.** `=TRIM(INDEX(Tape!Q2:Q1201,MATCH(B2,Tape!A2:A1201,0)))` works, but without `$` signs and without IFNA it shows `#N/A` for an unknown ID, and the sheet now has two lookups to keep in step.
+- **Expecting TRIM to remove every space-like character.** Data pasted from a web page or a PDF often contains the non-breaking space, CHAR(160), which TRIM ignores. Clean it first: `=TRIM(SUBSTITUTE(B6,CHAR(160)," "))`. The symptom is a LEN that stays one character too long after TRIM.
+- **Calling the region "fixed".** B9 changes what the reader sees on the Lookup sheet only; the strats still split London into four lines.
+
+#### Trade-offs and going further
+
+- **Where to clean.** Cleaning in a lookup row is quick and local. Cleaning a helper column on the Tape sheet (`=PROPER(TRIM(Q2))`, copied down) fixes every formula that uses it, but the workbook now has two region columns and every formula must point to the right one. Cleaning at source, in the servicer's system or in the SQL load, fixes the problem for every user; that is the professional answer, and the exceptions log (Chapter 15) is how you ask for it.
+- **TRIM or a mapping table.** TRIM and PROPER fix spelling mechanically; a mapping table fixes meaning ("Greater London" → "London"). Real tapes need both, in that order.
+- **Going further.** Add B11 `=IF(EXACT(B6,B9),"Clean","Spaces removed")`, so the sheet tells the user when the raw value was dirty.
+
+### Exercise 4: the largest loss the reserve can absorb
+
+#### What the question asks
+
+> On the Waterfall sheet, what is the largest loss (in B9) for which the reserve fund ends **above zero** and the Class B PDL is cleared in full? Find it by changing B9, then explain it with arithmetic.
+
+In plain words: the Waterfall sheet runs Chapter 9's month 2 with a loss of £260,000. Raise the loss in B9 until the reserve fund is used up, find the turning point, and show with a short calculation why it falls exactly there.
+
+The exercise uses the revenue waterfall built with MIN (Section 16.8), the order of items in Ashcombe's revenue waterfall (Chapter 9, Section 9.2), the PDL (Section 9.4) and excess spread (Chapter 8, Section 8.6).
+
+#### The plan
+
+1. **Read what does not move.** Items 1 to 5 (expenses, fee, Class A interest, Class A PDL, Class B interest) do not depend on the loss while it is below Class B's balance, so the cash left after item 5 is fixed.
+2. **Follow the loss down the waterfall.** Item 6 (Class B PDL) takes the loss first; item 7 (the reserve) gets what is left.
+3. **Find the turning point by trial**, then confirm it with arithmetic and with Goal Seek.
+4. **Check the rest of the sheet** at that loss: principal, closing balances and the three check cells.
+
+#### Step by step
+
+**Step 1: the cash left after item 5.** With the inputs as given, D22 shows **£2,423,148**. It comes from:
+
+- available revenue D17 = revenue receipts £1,038,000 + reserve £2,383,271 = £3,421,271;
+- minus items 1 to 5: £30,000 + £48,743 + £751,380 + £0 + £168,000 = £998,123;
+- £3,421,271 − £998,123 = £2,423,148.
+
+Equivalently: excess spread B27 (£39,877) + the opening reserve (£2,383,271) = £2,423,148.
+
+**Step 2: how the loss uses it.** B23 (item 6 due) is `=MIN(B9,B5)`, the loss up to Class B's balance. C23 pays `=MIN(B23,D22)`. C24 (item 7) pays what is left, `=MIN(B24,D23)`, and B28 shows it as the closing reserve. So:
+
+- while the loss is below £2,423,148, item 6 is paid in full and the reserve keeps the difference;
+- at £2,423,148 the reserve ends at exactly £0;
+- above it, item 6 is short and the gap stays on the PDL (C41).
+
+**Step 3: trial in B9.**
+
+| B9 (loss) | C23 PDL cleared | B28 reserve | C41 PDL outstanding |
+|---:|---:|---:|---:|
+| 260,000 | 260,000 | 2,163,148 | 0 |
+| 2,423,000 | 2,423,000 | **148** | 0 |
+| 2,423,148 | 2,423,148 | 0 | 0 |
+| 2,424,000 | 2,423,148 | 0 | **852** |
+
+The largest whole-pound loss that leaves the reserve **above zero** is **£2,423,147** (reserve £1); in round numbers, any loss below **£2,423,148**.
+
+**Step 4: confirm with Goal Seek.** In E22 type `=D22-B9` (cash left after item 5 minus the loss). Data → What-If Analysis → Goal Seek: set E22 to 0 by changing B9. Excel returns **2,423,148**. A helper cell is needed because B28 itself is flat at zero for every loss above the turning point, and Goal Seek can stop anywhere on a flat line.
+
+#### Reading the result
+
+- **In one month the deal can absorb a £2.42m loss without touching any note**: about 1.0% of the £233,968,000 pool. That capacity is this month's excess spread plus the whole reserve.
+- **The reserve is the larger part.** Excess spread contributes only £39,877; the reserve contributes £2,383,271. A month like this shows why rating agencies look at the reserve's size relative to the pool.
+- **Above the turning point, Class B carries the loss.** At £2,424,000, £852 of PDL is outstanding: notes exceed the pool by £852, and the deal relies on future excess spread to clear it.
+- **Even the given £260,000 loss leaves the reserve short of its £2,400,000 target** (closing £2,163,148): item 7 is never filled this month.
+
+#### Checking your answer
+
+- **The checks still show 0.** At B9 = 2,423,148 the three cells C44:C46 are 0: the waterfall pays out exactly what is available, and notes − pool − PDL = 0.
+- **Principal at the turning point.** Available principal C33 = £3,150,000 + £2,423,148 = £5,573,148, all to Class A. Closing pool C38 = £233,968,000 − £3,150,000 − £2,423,148 = £228,394,852; closing notes = (£200,368,000 − £5,573,148) + £33,600,000 = £228,394,852. Notes equal pool, with no PDL.
+- **The same answer in Python.** Chapter 18, Exercise 4 runs the same month with `run_waterfall` and finds the reserve at £148 for a £2,423,000 loss.
+
+#### Mistakes people make on this exercise
+
+- **Answering the reserve alone, £2,383,271.** This month's excess spread also clears PDL before the reserve is touched, so the answer is £39,877 higher.
+- **Goal Seek on B28 directly.** Asking for B28 = 0 can return any loss above the turning point, for example 2,500,000, because the reserve stays at 0 from there on.
+- **Changing the loss above £33,600,000.** Beyond Class B's balance, item 4 (Class A PDL) starts to apply; the question is about Class B's PDL, so the arithmetic of Step 1 no longer holds.
+
+#### Trade-offs and going further
+
+- **Trial or Goal Seek.** Trial shows the reader how the sheet behaves on both sides of the turning point; Goal Seek gives the exact figure. In a test, do both: the table proves you understood, the exact number scores the mark.
+- **One month or the life of the deal.** The month's capacity is excess spread plus reserve; over several months it is the reserve plus every month's excess spread. That is why agencies credit excess spread over time, and why a deal with thin excess spread relies on its reserve.
+- **Going further.** Set B7 (revenue) to £998,123: excess spread becomes 0, and the largest absorbable loss falls to the reserve alone, £2,383,271.
+
+### Exercise 5: actual days and ACT/365 interest
+
+#### What the question asks
+
+> On the Dates sheet, add a column that shows how many **actual** days each period has, and the Class A interest it would have on ACT/365.
+
+In plain words: the Dates sheet counts each interest period on 30/360, where every regular month has 30 days. Add the real number of calendar days in each period, and the Class A interest that a note paying on ACT/365 (actual days over a 365-day year) would pay.
+
+The exercise uses date arithmetic and DAYS360 (Section 16.9), the day count conventions of Chapter 3 (Section 3.4), and the Dates sheet's inputs: closing on 15 July 2026, the first payment on 20 August 2026, Class A of £206,400,000 at 4.5%.
+
+#### The plan
+
+1. **Count actual days** as the difference between consecutive dates: Excel stores dates as day numbers, so subtraction gives days.
+2. **Treat the first period separately**, because it starts at closing, not at a payment date.
+3. **Compute interest** as balance × coupon × days ÷ 365, rounded to the pound, next to the 30/360 column.
+4. **Compare the two columns** and check the totals.
+
+#### Step by step
+
+**Step 1: headers.** F7 "Actual days"; H7 "Interest ACT/365 (£)". Column G holds notes, so leave it.
+
+**Step 2: the first period.** In F8:
+
+```
+=B8-$B$2
+```
+
+- B8 is the first payment date, 20 August 2026; B2 is the closing date, 15 July 2026.
+- The difference is **36** days. The 30/360 column C8 shows 35, because DAYS360 treats July as 30 days.
+
+**Step 3: the other periods.** In F9:
+
+```
+=B9-B8
+```
+
+Copy F9 down to F19. Each row counts from the previous payment date: 20 August to 20 September is **31**; 20 January to 20 February 2027 is 31; 20 February to 20 March is **28**.
+
+**Step 4: the interest.** In H8:
+
+```
+=ROUND($B$4*$B$5*F8/365,0)
+```
+
+- `$B$4` (balance) and `$B$5` (coupon) are fixed with `$`; F8 moves when copied.
+- `/365` is the ACT/365 year. Copy H8 down to H19.
+
+The first four rows:
+
+| Period | Payment date | 30/360 days | 30/360 interest | Actual days | ACT/365 interest |
+|---:|---|---:|---:|---:|---:|
+| 1 | 20 Aug 2026 | 35 | 903,000 | 36 | **916,077** |
+| 2 | 20 Sep 2026 | 30 | 774,000 | 31 | **788,844** |
+| 3 | 20 Oct 2026 | 30 | 774,000 | 30 | 763,397 |
+| 8 | 20 Mar 2027 | 30 | 774,000 | 28 | 712,504 |
+
+#### Reading the result
+
+- **On ACT/365 the coupon changes every month**: £712,504 for February's 28 days, £788,844 for a 31-day month. On 30/360 every regular month pays the same £774,000.
+- **Over the year the two are close.** The twelve ACT/365 payments add up to **£9,415,233**; the twelve 30/360 payments to £9,417,000. The difference is £1,767, because the year covered has 370 actual days, about 1.4% more than 365.
+- **This is why SONIA notes never pay the same amount twice.** Sterling floating-rate notes count actual days, so even with a flat rate the cash changes with the calendar; an analyst checking a payment must count the days first.
+
+#### Checking your answer
+
+- **Days add up to the span.** `=SUM(F8:F19)` returns **370**, and `=B19-B2` (20 July 2027 − 15 July 2026) also returns 370.
+- **Interest from the total.** £206,400,000 × 4.5% × 370 ÷ 365 = £9,415,233, the sum of H8:H19 (`=SUM(H8:H19)`). The rounding of each row happens to cancel exactly here; on other dates the two can differ by a pound or two.
+- **One row by hand.** Period 2: 206,400,000 × 0.045 = 9,288,000 a year; × 31 ÷ 365 = £788,843.84, rounded to £788,844.
+
+#### Mistakes people make on this exercise
+
+- **Copying F8 down.** `=B9-$B$2` measures every period from closing: 67, 97, and so on. The `$` is what keeps B2 fixed, so the first-period formula cannot be copied.
+- **Dividing by 360 on the actual-days column.** ACT/360 is a real convention (used for euro and dollar notes), but it is not the one asked: period 2 would show £799,800.
+- **Formatting the days as dates.** A difference of two dates sometimes inherits a date format and displays as 05/02/1900. Format F8:F19 as General or Number.
+
+#### Trade-offs and going further
+
+- **One sheet, two conventions.** Showing both columns side by side is the clearest way to explain a coupon to someone used to one convention. The cost is a wider sheet, and the risk that a reader takes the wrong column; label them precisely.
+- **ACT/365 or ACT/365F.** UK documents write "Actual/365 (Fixed)": always 365, even in a leap year. This exercise uses that convention; ACT/ACT would divide by 366 for periods in 2028.
+- **Going further.** Add column I with `=H8-E8`, the monthly difference between the two conventions. It is positive in 31-day months and negative in February.
+
+### Exercise 6: PivotTable of rate type by repayment type
+
+#### What the question asks
+
+> Build a PivotTable showing balance by **rate_type** (rows) and **repayment_type** (columns).
+
+In plain words: a two-way table of the pool balance, with the three rate types (Fixed, SVR, Tracker) down the side and the three repayment types (Interest-only, Part and part, Repayment) across the top, with totals.
+
+The exercise uses PivotTables (Section 16.12), the rate and product types of Chapter 10 (Section 10.4), and SUMIFS with two conditions (Section 16.5) as a check.
+
+#### The plan
+
+1. **Insert the PivotTable** on the whole tape, on a new sheet, so the data stays untouched.
+2. **Place the fields**: rows, columns, values.
+3. **Make the values a sum, formatted**, because a pivot sometimes defaults to a count.
+4. **Check the grand total and one cell** with a formula.
+
+#### Step by step
+
+**Step 1: insert.** Click any cell inside the Tape data (A1:W1201). Insert → PivotTable → New Worksheet → OK. Excel selects the whole block because it has no blank rows or columns; check that the range reads `Tape!$A$1:$W$1201`.
+
+**Step 2: place the fields.** In the PivotTable Fields pane:
+
+- drag `rate_type` to **Rows**;
+- drag `repayment_type` to **Columns**;
+- drag `current_balance` to **Values**.
+
+**Step 3: sum and format.** The Values box must read "Sum of current_balance". If it reads "Count of …", click it → Value Field Settings → Sum. In the same dialog, Number Format → Number, 0 decimals, with the thousands separator.
+
+The result:
+
+| | Interest-only | Part and part | Repayment | Total |
+|---|---:|---:|---:|---:|
+| Fixed | 35,955,572 | 8,512,035 | 125,171,304 | 169,638,911 |
+| SVR | 8,351,507 | 1,801,365 | 19,644,330 | 29,797,202 |
+| Tracker | 8,731,952 | 2,430,520 | 29,401,415 | 40,563,887 |
+| **Total** | 53,039,031 | 12,743,920 | 174,217,049 | **240,000,000** |
+
+**Step 4: name the sheet.** Rename it "Pivot_rate_repay" so a reviewer finds it.
+
+#### Reading the result
+
+- **Fixed-rate loans are 70.7% of the pool** (£169.6m of £240m), and repayment loans 72.6%. A UK prime pool is usually dominated by both.
+- **The largest cell, fixed-rate repayment loans, holds £125.2m: 52.2% of the pool.** It is the "typical" Ashcombe loan.
+- **Interest-only is 22.1% of the pool.** Investors watch it because the whole balance is due at maturity; a cross-table shows whether those loans are also on SVR (£8.4m), the most expensive rate.
+- **SVR is the smallest rate type (12.4%)** but pays the highest WA rate (Chapter 17, Exercise 4): borrowers who did not remortgage.
+
+#### Checking your answer
+
+- **The grand total is £240,000,000**, the pool balance on the Metrics sheet.
+- **One cell by formula.** `=SUMIFS(Tape!H2:H1201,Tape!N2:N1201,"Fixed",Tape!O2:O1201,"Repayment")` returns £125,171,304, the Fixed/Repayment cell.
+- **Counts.** Change the value to Count: the totals are 853, 144 and 203 loans by rate type, and 245, 64 and 891 by repayment type, which add to 1,200.
+
+#### Mistakes people make on this exercise
+
+- **Leaving Values on Count.** The table then shows 1,200 in the corner and looks right; only the sizes reveal it is a count.
+- **Selecting one column before inserting.** The pivot then covers only that column and the other fields are missing from the list.
+- **Not refreshing after the data change.** A pivot is a snapshot: when the tape changes, PivotTable Analyze → Refresh is needed. A formula grid (SUMIFS) updates by itself.
+
+#### Trade-offs and going further
+
+- **Pivot or SUMIFS grid.** A pivot takes thirty seconds and lets you swap fields; a SUMIFS grid takes longer to build but updates by itself and sits inside a report layout. Use the pivot to explore, the grid for a monthly report.
+- **Pounds or percentages.** Value Field Settings → Show Values As → % of Grand Total turns the same table into shares (52.2% in the largest cell). Keep two pivots, one in each, rather than switching one back and forth.
+- **Going further.** Add `occupancy` to the Filters area and select Buy-to-let: interest-only is a much larger share of landlords' loans than of the pool.
+
+### Exercise 7: no-principal loans that are repayment loans
 
 #### What the question asks
 
@@ -258,3 +542,72 @@ The exercise uses INDEX with MATCH (Section 16.6), IFNA for loans not found, COU
 - **Monthly or permanent.** A lookup column added for one question is easy to forget; if the question is asked every month, build it into the Movements sheet's layout, with a heading and a check, so that next month's file answers it automatically.
 
 - **Sheet of answers or extra columns.** Adding the lookup as column J keeps the answer next to the data it explains; a separate answers sheet keeps the original layout untouched. In a test, follow the instruction "put each answer on a new sheet" when it is given.
+
+### Exercise 8: CDR 2% and severity 30% on the Projection sheet
+
+#### What the question asks
+
+> On the Projection sheet, set the CDR to 2% and the severity to 30%. What happens to Class A's WAL and to lifetime losses? Why does the WAL change at all?
+
+In plain words: the Projection sheet runs the pool forward with 10% CPR, 0.5% CDR and 20% severity, and pays Class A from the principal. Raise defaults to 2% a year and severity to 30%, read the two results, and explain why a credit assumption changes the timing of Class A's repayment.
+
+The exercise uses the projection of Section 16.16, CDR and severity (Chapter 10, Section 10.8) and the WAL (Section 10.9).
+
+#### The plan
+
+1. **Record the base results** before changing anything: WAL in F5, losses in F6.
+2. **Change the two inputs** and read the new results.
+3. **Separate the two effects**: change CDR and severity one at a time to see which one moves the WAL.
+4. **Explain** from the sheet's formulas why defaults shorten the WAL.
+
+#### Step by step
+
+**Step 1: base.** With C5 = 10%, C6 = 0.5%, C7 = 20%: F5 shows **4.91 years** and F6 **£1,589,745**. The last month with Class A principal (filter column J for values above 0) is month **159**.
+
+**Step 2: the stress.** Set C6 = 2% and C7 = 30%:
+
+- F5 (Class A WAL): **4.46 years**;
+- F6 (lifetime losses): **£8,851,784**;
+- Class A's last payment moves to month **146**.
+
+**Step 3: one input at a time.**
+
+| CDR | Severity | Class A WAL | Lifetime losses (£) |
+|---:|---:|---:|---:|
+| 0.5% | 20% | 4.91 | 1,589,745 |
+| 0.5% | 30% | 4.91 | 2,384,617 |
+| 2.0% | 20% | 4.46 | 5,901,189 |
+| 2.0% | 30% | 4.46 | 8,851,784 |
+
+Severity changes the losses but not the WAL; CDR changes both.
+
+**Step 4: read the formulas.** In row 12:
+
+- E12 (defaults) is `=(B12-D12)*$F$3`: F3 is the monthly default rate, `=1-(1-C6)^(1/12)`, which rises from 0.042% to **0.168%**.
+- J12 (Class A principal) is `=MIN(D12+E12+F12,I12)`: scheduled principal **plus defaults** plus prepayments.
+- G12 (losses) is `=E12*$C$7`: defaults × severity, which never enters column J.
+
+#### Reading the result
+
+- **The WAL shortens because defaulted balances leave the pool and are paid to Class A.** The sheet assumes (note in A9) that recoveries and excess spread cover each default in full, so a default acts like a prepayment for Class A: its principal comes back early. Lifetime defaults rise from £7.9m to £29.5m, and Class A is repaid 13 months sooner.
+- **Severity is only a loss figure here.** It splits each default into recovery and loss, but the model pays Class A the whole defaulted balance either way, so severity cannot move the WAL.
+- **Losses rise more than fivefold**: four times more defaults, each losing 1.5 times more.
+- **For Class A this is not good news.** In a real deal, losses beyond excess spread go to the reserve and then to the PDL; the projection's simplification hides the point at which Class B, and then Class A, would lose principal.
+
+#### Checking your answer
+
+- **F7 still shows 0**: the model still repays all £206.4m of Class A, as its assumption guarantees.
+- **The direction is right.** More defaults → more principal sooner → shorter WAL, the same direction as a higher CPR (Section 16.16 shows WAL falling as CPR rises).
+- **The same model in Python.** `project(cpr=0.10, cdr=0.02, severity=0.30)` in `ch18_08_cashflow_projection.py` gives the same WAL and losses.
+
+#### Mistakes people make on this exercise
+
+- **Typing 2 instead of 2%.** C6 = 2 means a 200% CDR: F3 becomes an error, because 1 − 2 is negative and its twelfth root is not a number.
+- **Concluding that defaults are good for Class A.** The model shortens Class A's life only because it assumes every default is fully covered; it is a timing model, not a loss model.
+- **Saying severity shortens the WAL.** Step 3 shows it does not; the change comes from CDR alone.
+
+#### Trade-offs and going further
+
+- **Simple projection or full waterfall.** A pool-level projection is fast, transparent and good for timing (WAL, final payment); it cannot show who bears losses. For that, run each month through the waterfall, as Chapter 18's `run_waterfall` does for one month.
+- **Constant CDR or a curve.** A flat 2% a year is easy to explain; real defaults peak a few years after origination. Agencies use default curves; a flat CDR is the interview standard.
+- **Going further.** Find the CDR at which lifetime losses reach £24,000,000 (10% of the pool) with 30% severity, by trying values in C6. Then say whether Class B, at £33.6m, would still be protected.

@@ -13,17 +13,17 @@ Try each exercise yourself before you read its solution.
 | [chapter_05.md](chapter_05.md) | Chapter 5: The counterparties and how the cash flows | 1 |
 | [chapter_06.md](chapter_06.md) | Chapter 6: Asset classes and deal types | 1 |
 | [chapter_07.md](chapter_07.md) | Chapter 7: The life of a deal: dates and documents | 1 |
-| [chapter_08.md](chapter_08.md) | Chapter 8: Tranches, ratings and credit enhancement | 1 |
-| [chapter_09.md](chapter_09.md) | Chapter 9: The waterfall, step by step | 1 |
-| [chapter_10.md](chapter_10.md) | Chapter 10: Pool metrics: describing a pool of loans | 1 |
-| [chapter_11.md](chapter_11.md) | Chapter 11: Credit risk and expected loss | 1 |
+| [chapter_08.md](chapter_08.md) | Chapter 8: Tranches, ratings and credit enhancement | 2 |
+| [chapter_09.md](chapter_09.md) | Chapter 9: The waterfall, step by step | 2 |
+| [chapter_10.md](chapter_10.md) | Chapter 10: Pool metrics: describing a pool of loans | 2 |
+| [chapter_11.md](chapter_11.md) | Chapter 11: Credit risk and expected loss | 2 |
 | [chapter_12.md](chapter_12.md) | Chapter 12: Interest rate, liquidity and counterparty risk | 1 |
 | [chapter_13.md](chapter_13.md) | Chapter 13: Regulation: the rules every deal follows | 1 |
 | [chapter_14.md](chapter_14.md) | Chapter 14: Investor reporting and surveillance | 1 |
 | [chapter_15.md](chapter_15.md) | Chapter 15: Data quality and reconciliation | 1 |
-| [chapter_16.md](chapter_16.md) | Chapter 16: Excel for structured finance: the formulas that matter | 3 |
-| [chapter_17.md](chapter_17.md) | Chapter 17: SQL for structured finance: the queries that matter | 3 |
-| [chapter_18.md](chapter_18.md) | Chapter 18: Python for structured finance: pandas at work | 3 |
+| [chapter_16.md](chapter_16.md) | Chapter 16: Excel for structured finance: the formulas that matter | 8 |
+| [chapter_17.md](chapter_17.md) | Chapter 17: SQL for structured finance: the queries that matter | 9 |
+| [chapter_18.md](chapter_18.md) | Chapter 18: Python for structured finance: pandas at work | 8 |
 | [chapter_19.md](chapter_19.md) | Chapter 19: Practice test 1: a two-month waterfall | 12 |
 | [chapter_20.md](chapter_20.md) | Chapter 20: Practice test 2: loan tape, data quality and reporting | 8 |
 | [chapter_21.md](chapter_21.md) | Chapter 21: Practice test 3: the timed Excel skills test | 12 |

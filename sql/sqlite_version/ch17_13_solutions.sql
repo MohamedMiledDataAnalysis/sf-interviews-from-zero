@@ -25,7 +25,31 @@ SELECT COUNT(*) AS loans FROM loan_tape
 WHERE arrears_months IS NULL OR possession_flag IS NULL;
 
 
--- ===== Chapter 17, Exercise 1: a balance-size strat with CASE
+-- ===== Chapter 17, Exercise 1: loans and balance by occupancy
+
+SELECT occupancy,
+       COUNT(*) AS loans,
+       SUM(current_balance) AS balance
+FROM loan_tape
+GROUP BY occupancy
+ORDER BY occupancy;
+
+
+-- ===== Chapter 17, Exercise 2: original LTV above 90%, largest first
+
+SELECT loan_id, original_ltv, current_balance
+FROM loan_tape
+WHERE original_ltv > 0.90
+ORDER BY current_balance DESC;
+
+SELECT COUNT(*) AS loans,
+       SUM(current_balance) AS balance,
+       MAX(original_ltv) AS highest_ltv
+FROM loan_tape
+WHERE original_ltv > 0.90;
+
+
+-- ===== Chapter 17, Exercise 3: a balance-size strat with CASE
 
 SELECT loan_id, current_balance,
        CASE
@@ -62,7 +86,61 @@ SELECT COUNT(*) FROM loan_tape
 WHERE current_balance IN (100000, 200000, 300000, 500000);
 
 
--- ===== Chapter 17, Exercise 2: up to date in April, 2+ behind in June
+-- ===== Chapter 17, Exercise 4: WA interest rate by rate type
+
+SELECT rate_type,
+       COUNT(*) AS loans,
+       SUM(interest_rate * current_balance)
+         / SUM(current_balance) AS wa_rate
+FROM loan_tape
+GROUP BY rate_type
+ORDER BY rate_type;
+
+SELECT SUM(CASE WHEN loan_id = 'ASH100602' THEN 0.0537
+                ELSE interest_rate END * current_balance)
+       / SUM(current_balance) AS wa_rate_fixed_corrected
+FROM loan_tape
+WHERE rate_type = 'Fixed';
+
+
+-- ===== Chapter 17, Exercise 5: the three largest loans in each region
+
+SELECT region, loan_id, current_balance, rn
+FROM (
+    SELECT region, loan_id, current_balance,
+           ROW_NUMBER() OVER (PARTITION BY region
+                              ORDER BY current_balance DESC) AS rn
+    FROM loan_tape
+) AS x
+WHERE rn <= 3
+ORDER BY region, rn;
+
+
+-- ===== Chapter 17, Exercise 6: arrears differences between tape and servicer
+
+SELECT t.loan_id,
+       t.arrears_months AS tape_arrears,
+       s.arrears_months AS servicer_arrears
+FROM loan_tape AS t
+JOIN servicer_balances AS s
+  ON s.loan_id = t.loan_id
+WHERE t.arrears_months <> s.arrears_months;
+
+SELECT COUNT(*) AS rows_compared
+FROM loan_tape AS t
+JOIN servicer_balances AS s
+  ON s.loan_id = t.loan_id;
+
+
+-- ===== Chapter 17, Exercise 7: why the query fails
+
+SELECT region, SUM(current_balance) AS balance
+FROM loan_tape
+GROUP BY region
+ORDER BY balance DESC;
+
+
+-- ===== Chapter 17, Exercise 8: up to date in April, 2+ behind in June
 
 SELECT COUNT(*) FROM loan_history
 WHERE month_end = '2026-04-30' AND arrears_months = 0
@@ -81,7 +159,7 @@ WHERE a.month_end = '2026-04-30'
 ORDER BY a.loan_id;
 
 
--- ===== Chapter 17, Exercise 3: buy-to-let up to 75% indexed LTV in the pool cut
+-- ===== Chapter 17, Exercise 9: buy-to-let up to 75% indexed LTV in the pool cut
 
 SELECT COUNT(*) AS eligible_loans,
        SUM(current_balance) AS eligible_balance
