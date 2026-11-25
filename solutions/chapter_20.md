@@ -1,5 +1,7 @@
 # Chapter 20: Practice test 2: loan tape, data quality and reporting
 
+> © 2026 Mohamed Miled. All rights reserved. This text is part of the book *Structured Finance Interviews from Zero* and may not be copied, republished or sold. The code blocks are under the MIT licence (see `LICENSE`); the explanations are not (see `LICENSE-TEXT.md`).
+
 ## Solution
 
 ### Question 1: control totals

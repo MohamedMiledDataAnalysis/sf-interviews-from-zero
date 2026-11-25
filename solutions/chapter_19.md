@@ -1,5 +1,7 @@
 # Chapter 19: Practice test 1: a two-month waterfall
 
+> © 2026 Mohamed Miled. All rights reserved. This text is part of the book *Structured Finance Interviews from Zero* and may not be copied, republished or sold. The code blocks are under the MIT licence (see `LICENSE`); the explanations are not (see `LICENSE-TEXT.md`).
+
 ## Solution
 
 The answers below come from `test1_solution.xlsx`, whose layout follows *Building the workbook, step by step*. Excel rounds halves up, so £37,052.50 becomes £37,053. Each solution has the same seven parts as the chapter corrections.

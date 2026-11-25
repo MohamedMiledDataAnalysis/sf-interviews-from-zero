@@ -1,5 +1,7 @@
 # Chapter 1: Analyst and data roles in structured finance
 
+> © 2026 Mohamed Miled. All rights reserved. This text is part of the book *Structured Finance Interviews from Zero* and may not be copied, republished or sold. The code blocks are under the MIT licence (see `LICENSE`); the explanations are not (see `LICENSE-TEXT.md`).
+
 ## Corrections
 
 ### Exercise 1: sorting a job advert into the five skills

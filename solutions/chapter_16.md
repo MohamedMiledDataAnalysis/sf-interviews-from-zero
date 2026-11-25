@@ -1,5 +1,7 @@
 # Chapter 16: Excel for structured finance: the formulas that matter
 
+> © 2026 Mohamed Miled. All rights reserved. This text is part of the book *Structured Finance Interviews from Zero* and may not be copied, republished or sold. The code blocks are under the MIT licence (see `LICENSE`); the explanations are not (see `LICENSE-TEXT.md`).
+
 ## Corrections
 
 ### Exercise 1: WA original LTV of buy-to-let loans

@@ -1,5 +1,7 @@
 # Chapter 21: Practice test 3: the timed Excel skills test
 
+> © 2026 Mohamed Miled. All rights reserved. This text is part of the book *Structured Finance Interviews from Zero* and may not be copied, republished or sold. The code blocks are under the MIT licence (see `LICENSE`); the explanations are not (see `LICENSE-TEXT.md`).
+
 ## Solution
 
 ### Task 1: links

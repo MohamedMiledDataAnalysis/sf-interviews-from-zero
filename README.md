@@ -56,3 +56,8 @@ To run a test on your own computer, from this folder: `python tests/run_python.p
 ## Corrections
 
 If you find an error, please open an issue on this repository. Corrections are listed here as they are made.
+
+## Licence
+
+- **Code**: MIT licence (see `LICENSE`). Reuse it freely in your own projects.
+- **Written material** (solutions, corrections, READMEs, guides, documents and data files): © 2026 Mohamed Miled, all rights reserved, like the book *Structured Finance Interviews from Zero*. Read it and study with it; do not copy, republish or sell it (see `LICENSE-TEXT.md`).

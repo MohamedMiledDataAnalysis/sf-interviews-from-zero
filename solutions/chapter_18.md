@@ -1,5 +1,7 @@
 # Chapter 18: Python for structured finance: pandas at work
 
+> © 2026 Mohamed Miled. All rights reserved. This text is part of the book *Structured Finance Interviews from Zero* and may not be copied, republished or sold. The code blocks are under the MIT licence (see `LICENSE`); the explanations are not (see `LICENSE-TEXT.md`).
+
 ## Corrections
 
 ### Exercise 1: WA interest rate by rate type

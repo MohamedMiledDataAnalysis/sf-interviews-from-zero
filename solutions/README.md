@@ -1,5 +1,7 @@
 # Solutions
 
+> © 2026 Mohamed Miled. All rights reserved. This text is part of the book *Structured Finance Interviews from Zero* and may not be copied, republished or sold. The code blocks are under the MIT licence (see `LICENSE`); the explanations are not (see `LICENSE-TEXT.md`).
+
 The solution to every exercise and every practice test question in *Structured Finance Interviews from Zero*, word for word as printed in the book. Each one follows the same seven steps: what the question asks, the plan, step by step, reading the result, checking your answer, the mistakes people make, and trade-offs.
 
 Try each exercise yourself before you read its solution.
