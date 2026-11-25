@@ -120,7 +120,7 @@ The exercise uses roll rates and cure rates, the measures of Section 11.8, *Moni
 - **More loans cured than rolled**, which is common: many arrears are temporary (a late salary, a changed bank account).
 - **A 35% roll from 2 to 3+ months is high.** Section 11.8's example shows a 21.6% roll from 1 to 2 months; roll rates usually rise in the deeper buckets, because a borrower who has missed two payments is more likely to be in real difficulty. At 3+ months, the loan is close to the point where the servicer starts possession proceedings.
 - **For a forecast**, multiplying roll rates bucket by bucket estimates how many of today's 1-month cases will reach default: the roll-rate matrix of Chapter 16 (Section 16.15) and Chapter 18 (Section 18.8) does this with the whole history.
-- **Ashcombe's own numbers.** In the June tape, 23 loans are 2 months in arrears and 24 are 3 months or more; applying a 35% roll to the 23 would add about 8 loans to the 3+ bucket next month, before any cures among the 24.
+- **Ashcombe's own numbers.** In the June tape, 23 loans are 2 months in arrears and 24 are 3 months or more; applying a 35% roll to the 23 gives 8.05, so 8 loans would move to the 3+ bucket next month, before any cures among the 24.
 
 #### Checking your answer
 
@@ -140,5 +140,5 @@ The exercise uses roll rates and cure rates, the measures of Section 11.8, *Moni
 
 - **Loans or balance.** Counting loans is simple and stable; weighting by balance shows the money at risk. A few large loans can move a balance-weighted roll rate a lot, so reports often show both.
 - **One month or an average.** A single month is noisy with 40 loans: one loan is 2.5 percentage points. Analysts average roll rates over three or six months before using them in a forecast.
-- **Going further.** If 35% of 2-month loans roll to 3+, and 60% of 3+ loans eventually default, about 21% of today's 2-month loans will default: 35% × 60%.
+- **Going further.** If 35% of 2-month loans roll to 3+, and 60% of 3+ loans eventually default, 21% of today's 2-month loans will default: 35% × 60%.
 - **Roll rates and transition matrices.** A full matrix shows every move between buckets (up to date, 1, 2, 3+, possession) in one table; the roll and cure rates of this exercise are two cells of it.

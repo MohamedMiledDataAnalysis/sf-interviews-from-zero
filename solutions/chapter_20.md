@@ -257,9 +257,10 @@ A shared log (spreadsheet or ticket system) is easy to follow; tracking items to
 #### What the question asks
 
 > **Linking questions (15 marks).**
->    a. The WA interest rate in the investor report is used to calculate the pool's weighted average yield and the deal's excess spread. If the 53.7% rate were not corrected, would the cash paid to noteholders change? Explain.
->    b. What would the duplicate loan ID do to the loan-level regulatory file?
->    c. Why might a repayment loan's balance be higher than its original balance? What would you ask the servicer?
+>
+> a. The WA interest rate in the investor report is used to calculate the pool's weighted average yield and the deal's excess spread. If the 53.7% rate were not corrected, would the cash paid to noteholders change? Explain.
+> b. What would the duplicate loan ID do to the loan-level regulatory file?
+> c. Why might a repayment loan's balance be higher than its original balance? What would you ask the servicer?
 
 In plain words: three short explanations that link data errors to their consequences: for the cash, for the regulatory file, and for a borrower's balance.
 

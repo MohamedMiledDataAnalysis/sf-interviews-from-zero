@@ -291,57 +291,53 @@ def test_18_mistakes_rounding():
     assert Decimal("2.5").quantize(Decimal("1"), rounding=ROUND_HALF_UP) == 3
 
 
-# 18.13 practice answers --------------------------------------------------------
-def test_18_practice(tape, hist, tmp_path):
-    x = pd.crosstab(tape["occupancy"], tape["repayment_type"])
-    assert x.loc["Buy-to-let"].tolist() == [183, 0, 33]
-    assert x.loc["Owner-occupied"].tolist() == [62, 64, 858]
-    g = (tape.assign(w=tape["indexed_ltv"] * tape["current_balance"])
-             .groupby("region_clean")[["w", "current_balance"]].sum())
-    ltv = (g["w"] / g["current_balance"]).sort_values(ascending=False)
-    assert (ltv.index[0], pct(ltv.iloc[0])) == ("East of England", "62.4%")
-    assert (ltv.index[-1], pct(ltv.iloc[-1])) == ("North East", "56.2%")
-    late = tape[tape["arrears_months"] >= 3].groupby("region_clean")["current_balance"].sum()
-    assert late.nlargest(5).to_dict() == {"North West": 1_049_319, "London": 784_026,
-                                          "West Midlands": 638_866, "Scotland": 483_699,
-                                          "South East": 457_367}
-    ratio = tape["monthly_payment"] * 12 / tape["borrower_income"]
-    assert (ratio > 0.30).sum() == 190 and pct(ratio.median()) == "24.7%"
-    wide = hist[hist["status"] == "Active"].pivot(index="loan_id", columns="month_end",
-                                                  values="current_balance")
-    both = wide[["2026-05-31", "2026-06-30"]].dropna()
-    assert (both["2026-05-31"] == both["2026-06-30"]).sum() == 293
-    h = hist.sort_values(["loan_id", "month_end"]).copy()
-    h["prev"] = h.groupby("loan_id")["current_balance"].shift(1)
-    h = h.dropna(subset=["prev"])
-    h = h.assign(red=h["prev"].where(h["status"] == "Redeemed", 0))
-    gm = h.groupby("month_end")[["red", "prev"]].sum()
-    cpr = 1 - (1 - gm["red"] / gm["prev"]) ** 12
-    assert [pct(v) for v in cpr] == ["14.7%", "11.7%", "12.8%", "11.5%", "10.5%"]
-    run("python/ch18_03_data_quality.py")
-    exceptions = pd.read_csv(HERE / "output" / "dq_exceptions.csv")
-    with pd.ExcelWriter(tmp_path / "dq_by_rule.xlsx") as xl:
-        for i, (rule, group) in enumerate(exceptions.groupby("rule_failed"), start=1):
-            group.to_excel(xl, sheet_name=f"Rule {i}", index=False)
-    assert len(pd.read_excel(tmp_path / "dq_by_rule.xlsx", sheet_name=None)) == 7
-
-
-# 18.17 corrections -------------------------------------------------------------
-def test_18_corrections(tape, hist):
+# Chapter 18 exercises (the solutions) -----------------------------------------
+def test_18_exercises(tape, hist):
+    # Exercise 1: WA rate by rate type
+    g = (tape.assign(w=tape["interest_rate"] * tape["current_balance"])
+             .groupby("rate_type")[["w", "current_balance"]].sum())
+    wa = g["w"] / g["current_balance"]
+    assert [pct(v, 3) for v in wa] == ["5.175%", "7.247%", "5.245%"]
+    # Exercise 2: strat with pd.cut
     edges = [0, 100_000, 200_000, 300_000, 500_000, 10_000_000]
     s = tape.groupby(pd.cut(tape["current_balance"], bins=edges), observed=False)["current_balance"]
-    assert (s.size().sum(), s.sum().sum()) == (1200, 240_000_000)
+    assert s.size().tolist() == [125, 581, 340, 137, 17]
+    assert s.sum().tolist() == [10_205_405, 87_927_905, 82_154_579, 49_632_662, 10_079_449]
+    # Exercise 3: validate raises on the duplicate ID
+    serv = pd.read_csv(DATA / "servicer_balances.csv")
+    with pytest.raises(pd.errors.MergeError):
+        tape.merge(serv, on="loan_id", how="outer", validate="one_to_one")
+    # Exercise 4: smallest month 2 loss that empties the reserve
+    m1 = run_waterfall(236_900_000, 203_300_000, 33_600_000, 2_400_000, 1_045_000, 2_880_000, 52_000)
+    m2 = lambda loss: run_waterfall(m1["Closing pool"], m1["Closing Class A"], m1["Closing Class B"],
+                                    m1["Closing reserve"], 1_038_000, 3_150_000, loss)
+    assert m2(2_423_000)["Closing reserve"] == 148 and m2(2_424_000)["Closing reserve"] == 0
+    # Exercise 5: ten largest loans
     top = tape.sort_values("current_balance", ascending=False).head(10)
-    assert pct(top["current_balance"].cumsum().iloc[-1] / tape["current_balance"].sum(), 2) == "2.67%"
+    cum = top["current_balance"].cumsum() / tape["current_balance"].sum()
+    assert (pct(cum.iloc[0], 2), pct(cum.iloc[-1], 2)) == ("0.35%", "2.67%")
+    # Exercise 6: correct the 53.7% rate
     fixed = tape.copy()
     fixed.loc[fixed["loan_id"] == "ASH100602", "interest_rate"] = 0.0537
     bal = fixed["current_balance"]
     assert pct((fixed["interest_rate"] * bal).sum() / bal.sum(), 3) == "5.400%"
+    # Exercise 7: 3+ months arrears by month
     a = hist[hist["status"] == "Active"]
     a = a.assign(b3=a["current_balance"].where(a["arrears_months"] >= 3, 0))
-    g = a.groupby("month_end")[["b3", "current_balance"]].sum()
-    r = g["b3"] / g["current_balance"]
-    assert (pct(r["2026-05-31"], 2), pct(r["2026-06-30"], 2)) == ("1.47%", "1.94%")
+    r = a.groupby("month_end")[["b3", "current_balance"]].sum()
+    r = r["b3"] / r["current_balance"]
+    assert [pct(v, 2) for v in r] == ["0.74%", "1.26%", "1.28%", "1.50%", "1.47%", "1.94%"]
+    # Exercise 8: CPR for a four-year WAL
+    from ch18_08_cashflow_projection import project, wal
+    assert round(wal(project(cpr=0.13), "class_a_principal"), 3) == 4.006
+    assert round(wal(project(cpr=0.13022), "class_a_principal"), 3) == 4.0
+
+
+def test_solutions_script_prints_the_book_numbers():
+    out = run("python/ch18_11_solutions.py")
+    for text in ["5.175%", "7.247%", "5.245%", "before 5.444%  after 5.400%", "13.02%",
+                 "Raises MergeError", "2424000 148", "0.026656"]:
+        assert text in out, text
 
 
 # Chapter 11 --------------------------------------------------------------------

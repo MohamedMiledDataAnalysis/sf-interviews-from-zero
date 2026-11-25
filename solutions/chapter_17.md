@@ -450,7 +450,7 @@ In total, **34 rows** in SQL Server.
 
 - **Why 34.** The tape has eleven standard regions, plus "Greater London" with one loan: 11 × 3 + 1 = 34. SQL Server's default collation ignores case and trailing spaces, so "London", "london" and `"London "` form one partition.
 - **The largest loan in the pool, ASH100881 (£840,940), heads London**, and the second-largest, ASH100772, heads the East of England. The top of each region is where concentration risk sits.
-- **A one-loan "region" is a data finding.** "Greater London" appears as its own partition; it should be mapped to London (Chapter 15, Section 15.5).
+- **A one-loan "region" is a data finding.** "Greater London" appears as its own partition; it should be mapped to London (Chapter 15, Section 15.7).
 - **The top three per region are 6.9% of the pool.** It is a quick concentration measure by region; a region whose three largest loans held, say, a fifth of its balance would need a closer look.
 
 #### Checking your answer
@@ -483,7 +483,7 @@ In total, **34 rows** in SQL Server.
 
 In plain words: compare the months in arrears of each loan in two sources, the loan tape and the servicer's extract, and list the loans where they disagree.
 
-The exercise uses joins (Section 17.5), the reconciliation method of Chapter 15 (Section 15.4: keys first, then values), and `NULL` behaviour (Section 17.12). The servicer's table is `dbo.servicer_balances`, with `loan_id`, `current_balance` and `arrears_months`.
+The exercise uses joins (Section 17.5), the reconciliation method of Chapter 15 (Section 15.3: keys first, then values), and `NULL` behaviour (Section 17.12). The servicer's table is `dbo.servicer_balances`, with `loan_id`, `current_balance` and `arrears_months`.
 
 #### The plan
 

@@ -184,7 +184,7 @@ The result:
 
 In plain words: the Lookup sheet finds a loan by its ID and shows its balance, rate, region, arrears and LTV. Add one more row that shows the same region, cleaned of stray spaces, so that a loan typed as `"London "` reads `"London"`.
 
-The exercise uses the INDEX/MATCH lookup already on the sheet (Section 16.6), TRIM and the other text functions (Section 16.11), and the region errors found in Chapter 15 (Section 15.3): the tape has `"London "` with a trailing space, `"london"` in lower case and `"Greater London"`, besides the 188 loans spelled `"London"`.
+The exercise uses the INDEX/MATCH lookup already on the sheet (Section 16.6), TRIM and the other text functions (Section 16.11), and the region errors found in Chapter 15 (Section 15.5): the tape has `"London "` with a trailing space, `"london"` in lower case and `"Greater London"`, besides the 188 loans spelled `"London"`.
 
 #### The plan
 
@@ -223,7 +223,7 @@ The ␣ marks the space, which Excel does not show.
 
 - **TRIM fixes one kind of error only: spaces.** It turns `"London "` into `"London"`, so a SUMIFS that compares exactly would now count that loan with London.
 - **It does not fix case.** ASH100096 stays `"london"`. Excel's own comparisons ignore case (SUMIFS with "London" already counts it), but SQL Server with a case-sensitive collation, pandas and Python do not. `=PROPER(TRIM(B6))` returns "London" for both loans.
-- **It cannot fix a different name.** "Greater London" (ASH101151) is a valid-looking text that is not in the allowed list. Only a mapping table (Chapter 15, Section 15.5) turns it into "London", and someone must decide that the mapping is right.
+- **It cannot fix a different name.** "Greater London" (ASH101151) is a valid-looking text that is not in the allowed list. Only a mapping table (Chapter 15, Section 15.7) turns it into "London", and someone must decide that the mapping is right.
 - **So the lookup row is a display fix.** It shows the reader the clean value of one loan; it does not change the region used by the Metrics and Strats sheets, which still read column Q of the Tape.
 - **Why this matters in a lookup.** A lookup by region (a mapping table of collections teams, say) uses an exact match: `"London "` finds nothing and returns `#N/A`. Cleaning the key before the lookup is what makes it match; that is the practical reason TRIM is the first function analysts reach for on a new file.
 
@@ -293,7 +293,7 @@ The largest whole-pound loss that leaves the reserve **above zero** is **£2,423
 
 #### Reading the result
 
-- **In one month the deal can absorb a £2.42m loss without touching any note**: about 1.0% of the £233,968,000 pool. That capacity is this month's excess spread plus the whole reserve.
+- **In one month the deal can absorb a £2.42m loss without touching any note**: 1.04% of the £233,968,000 pool. That capacity is this month's excess spread plus the whole reserve.
 - **The reserve is the larger part.** Excess spread contributes only £39,877; the reserve contributes £2,383,271. A month like this shows why rating agencies look at the reserve's size relative to the pool.
 - **Above the turning point, Class B carries the loss.** At £2,424,000, £852 of PDL is outstanding: notes exceed the pool by £852, and the deal relies on future excess spread to clear it.
 - **Even the given £260,000 loss leaves the reserve short of its £2,400,000 target** (closing £2,163,148): item 7 is never filled this month.
@@ -302,6 +302,7 @@ The largest whole-pound loss that leaves the reserve **above zero** is **£2,423
 
 - **The checks still show 0.** At B9 = 2,423,148 the three cells C44:C46 are 0: the waterfall pays out exactly what is available, and notes − pool − PDL = 0.
 - **Principal at the turning point.** Available principal C33 = £3,150,000 + £2,423,148 = £5,573,148, all to Class A. Closing pool C38 = £233,968,000 − £3,150,000 − £2,423,148 = £228,394,852; closing notes = (£200,368,000 − £5,573,148) + £33,600,000 = £228,394,852. Notes equal pool, with no PDL.
+- **The chapter's breakeven example.** Section 16.21 sets B28 to 1 with Goal Seek and gets £2,423,147: one pound below the turning point, as Step 3's table shows.
 - **The same answer in Python.** Chapter 18, Exercise 4 runs the same month with `run_waterfall` and finds the reserve at £148 for a £2,423,000 loss.
 
 #### Mistakes people make on this exercise
@@ -324,7 +325,7 @@ The largest whole-pound loss that leaves the reserve **above zero** is **£2,423
 
 In plain words: the Dates sheet counts each interest period on 30/360, where every regular month has 30 days. Add the real number of calendar days in each period, and the Class A interest that a note paying on ACT/365 (actual days over a 365-day year) would pay.
 
-The exercise uses date arithmetic and DAYS360 (Section 16.9), the day count conventions of Chapter 3 (Section 3.4), and the Dates sheet's inputs: closing on 15 July 2026, the first payment on 20 August 2026, Class A of £206,400,000 at 4.5%.
+The exercise uses date arithmetic and DAYS360 (Section 16.9), the day count conventions of Chapter 3 (Section 3.2), and the Dates sheet's inputs: closing on 15 July 2026, the first payment on 20 August 2026, Class A of £206,400,000 at 4.5%.
 
 #### The plan
 

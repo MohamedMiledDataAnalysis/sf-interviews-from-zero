@@ -67,7 +67,7 @@ Tracker    5.245%
 - **SVR loans pay the most, 7.25%**, as in SQL: the lender's standard variable rate, paid by borrowers whose deal has ended.
 - **Fixed is overstated by the 53.7% keying error** on ASH100602 (Chapter 15). Exercise 6 corrects it.
 - **Three tools, one figure.** Excel (SUMPRODUCT), SQL (two SUMs) and pandas (`groupby` and `sum`) give the same 5.175%, 7.247% and 5.245%. In an interview, saying that you checked one tool against another is worth as much as the number.
-- **The figures are for a report, the precision is for checking.** Three decimals of a percent (5.175%) are enough to compare tools; a report shows two (5.17%). Keep the full value in the data and format only for display.
+- **The figures are for a report, the precision is for checking.** Three decimals of a percentage (5.175%) are enough to compare tools; a report shows two (5.17%). Keep the full value in the data and format only for display.
 
 #### Checking your answer
 
@@ -97,7 +97,7 @@ prints 0.05444…, the pool's 5.444% (Section 18.3).
 - **One function for every weighted average.** Section 18.3 wraps the pool version in a function, `wa(column)`; adding a `by` argument that runs the `groupby` makes the same function serve rate, LTV and term by any group.
 - **Going further.** Group by two columns, `groupby(["rate_type", "repayment_type"])`: SVR interest-only loans pay the most, 7.26%.
 - **`pivot_table` for the same result.** `tape.assign(w=…).pivot_table(index="rate_type", values=["w", "current_balance"], aggfunc="sum")` gives the same two sums; it is handier when a second grouping goes across the columns.
-- **Tiny differences between tools.** Excel, SQL Server and pandas can disagree in the sixth or seventh decimal, because each adds floating-point numbers in a different order. Compare results rounded to the precision you report (three decimals of a percent here), not to the last digit.
+- **Tiny differences between tools.** Excel, SQL Server and pandas can disagree in the sixth or seventh decimal, because each adds floating-point numbers in a different order. Compare results rounded to the precision you report (three decimals of a percentage here), not to the last digit.
 
 ### Exercise 2: a balance-size strat with pd.cut
 
@@ -289,7 +289,7 @@ Two different loans share one ID. Chapter 15 found the cause: the 2020 loan is r
 
 - **Fail fast or report.** `validate` stops the whole script, which is right for a monthly control: nothing should be published on a broken key. A reporting script might instead list the duplicates and continue; then the check must write them to the exceptions log, or they are forgotten.
 - **Validate in pandas or in the database.** In SQL Server, a primary key on `loan_id` (Section 17.9) refuses the duplicate when the data are loaded. A database constraint catches the problem earlier, before anyone runs a merge.
-- **Going further.** Add `assert tape["loan_id"].is_unique, "Duplicate loan IDs in the tape"` before the merge. The script then stops with your own message, which a colleague will understand without knowing `merge`.
+- **Going further.** Before the merge, add `assert tape["loan_id"].is_unique` followed by a message of your own, such as "Duplicate loan IDs in the tape". The script then stops with that message, which a colleague will understand without knowing `merge`.
 
 - **`validate` in every merge.** The four values (`one_to_one`, `one_to_many`, `many_to_one`, `many_to_many`) cover every case; writing the one you expect documents the join for the next reader as well as checking it.
 
@@ -399,7 +399,7 @@ print(loss, month2(loss - 1_000)["Closing reserve"])
 
 In plain words: a top-ten list of loans by balance, with a running total expressed as a share of the whole pool, so that the last line says how much of the pool the ten largest loans hold.
 
-The exercise uses `sort_values`, `head` and `cumsum` (Section 18.12), and the concentration measure of Chapter 10 (Section 10.10) that SQL query 6.3 computes with a running window (Section 17.7).
+The exercise uses `sort_values` and `head` (Section 18.2), `cumsum` (Section 18.9), and the concentration measure of Chapter 10 (Section 10.10) that SQL query 6.3 computes with a running window (Section 17.7).
 
 #### The plan
 
@@ -483,7 +483,7 @@ The output (shares rounded):
 
 In plain words: one loan, ASH100602, has its rate keyed as 53.7% instead of 5.37% (Chapter 15). Fix it, without touching the data as received, and show how the pool's weighted average rate changes.
 
-The exercise uses `copy()`, boolean masks and `.loc` for changing values (Section 18.4), the weighted average (Section 18.3), and the data quality finding of Chapter 15 (Section 15.3).
+The exercise uses boolean masks (Section 18.4), `.loc` for selecting and changing values (Sections 18.3 and 18.14), `copy()`, the weighted average (Section 18.3), and the data quality finding of Chapter 15 (Section 15.2).
 
 #### The plan
 

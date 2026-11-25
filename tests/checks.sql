@@ -25,9 +25,6 @@ IF @n <> 190 THROW 50000, 'Ch17: London 190 loans under the default collation', 
 SELECT @n = COUNT(*) FROM (SELECT region FROM dbo.loan_tape GROUP BY region) AS g;
 IF @n <> 12 THROW 50000, 'Ch17: 12 region groups in SQL Server', 1;
 
--- Practice set answer 9 (SQL Server)
-SELECT @n = COUNT(*) FROM (SELECT region FROM dbo.loan_tape GROUP BY region HAVING AVG(current_balance) > 205000) AS g;
-IF @n <> 5 THROW 50000, 'Ch17 practice 9: five regions in SQL Server', 1;
 
 -- Joins and reconciliation
 SELECT @n = COUNT(*) FROM dbo.servicer_balances AS s LEFT JOIN dbo.loan_tape AS t ON t.loan_id = s.loan_id WHERE t.loan_id IS NULL;
@@ -156,14 +153,14 @@ IF @n <> 1200 OR @n2 <> 1200 OR @d <> 240000000 THROW 50000, 'Ch17 5.2: servicer
 SELECT @d = ROUND(100 * (1 - POWER(1 - CAST(prepayments AS FLOAT) / (opening_pool - scheduled_principal), 12)), 1) FROM dbo.periods WHERE period = 1;
 IF @d <> 10.5 THROW 50000, 'Ch17 5.3: CPR period 1', 1;
 
--- 6.1, 6.2, 6.3 / practice 18, 6.5
+-- 6.1, 6.2, 6.3, 6.5
 SELECT @n = COUNT(*) FROM (SELECT loan_id FROM dbo.loan_tape GROUP BY loan_id HAVING COUNT(*) > 1) AS x;
 SELECT @s = MAX(loan_id) FROM (SELECT loan_id FROM dbo.loan_tape GROUP BY loan_id HAVING COUNT(*) > 1) AS x;
 IF @n <> 1 OR @s <> 'ASH100213' THROW 50000, 'Ch17 6.1: one duplicate ID', 1;
 SELECT TOP 1 @d = ROUND(100.0 * current_balance / SUM(current_balance) OVER (), 3) FROM dbo.loan_tape ORDER BY current_balance DESC;
 IF @d <> 0.350 THROW 50000, 'Ch17 6.2: largest loan 0.35%', 1;
 SELECT @d = ROUND(100.0 * SUM(current_balance) / 240000000, 2) FROM (SELECT TOP 10 current_balance FROM dbo.loan_tape ORDER BY current_balance DESC) AS x;
-IF @d <> 2.67 THROW 50000, 'Ch17 6.3 and practice 18: ten largest 2.67%', 1;
+IF @d <> 2.67 THROW 50000, 'Ch17 6.3: ten largest 2.67%', 1;
 SELECT @d = MAX(prepayments) - MIN(prepayments) FROM dbo.periods;
 IF @d <> 280000 THROW 50000, 'Ch17 6.5: +280,000', 1;
 
@@ -234,52 +231,47 @@ IF EXISTS (SELECT loan_id, current_balance FROM dbo.servicer_balances EXCEPT SEL
 SELECT DISTINCT @d = PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY current_balance) OVER () FROM dbo.loan_tape;
 IF @d <> 179211.5 THROW 50000, 'Ch17 interview table: median balance 179,211.50', 1;
 
--- Practice set answers (SQL Server values)
-IF (SELECT COUNT(*) FROM dbo.loan_tape WHERE rate_type = 'Tracker') <> 203 THROW 50000, 'Practice 1', 1;
-IF (SELECT SUM(current_balance) FROM dbo.loan_tape WHERE repayment_type = 'Interest-only') <> 53039031 THROW 50000, 'Practice 2', 1;
-IF (SELECT ROUND(AVG(original_ltv), 4) FROM dbo.loan_tape WHERE occupancy = 'Buy-to-let') <> 0.6204 THROW 50000, 'Practice 3', 1;
-SELECT TOP 1 @s = loan_id, @d = current_balance FROM dbo.loan_tape WHERE region = 'Scotland' ORDER BY current_balance DESC;
-IF @s <> 'ASH100594' OR @d <> 542210 THROW 50000, 'Practice 4', 1;
-IF (SELECT COUNT(*) FROM dbo.loan_tape WHERE original_term_months = 420) <> 171 THROW 50000, 'Practice 5', 1;
-IF (SELECT ROUND(SUM(indexed_ltv * current_balance) / SUM(current_balance), 4) FROM dbo.loan_tape WHERE arrears_months >= 1) <> 0.6155 THROW 50000, 'Practice 6', 1;
-IF (SELECT COUNT(*) FROM dbo.loan_tape WHERE origination_date >= '2025-01-01' AND origination_date < '2026-01-01') <> 221 THROW 50000, 'Practice 7', 1;
-IF EXISTS (SELECT original_term_months, COUNT(*) FROM dbo.loan_tape GROUP BY original_term_months
-           EXCEPT SELECT * FROM (VALUES (240, 102), (300, 493), (360, 434), (420, 171)) AS v (t, n)) THROW 50000, 'Practice 8', 1;
-IF (SELECT ROUND(AVG(current_balance), 0) FROM dbo.loan_tape WHERE region = 'London') <> 205872 THROW 50000, 'Practice 9: London average 205,872', 1;
-IF (SELECT ROUND(100.0 * SUM(CASE WHEN rate_type = 'Fixed' THEN current_balance ELSE 0 END) / SUM(current_balance), 2) FROM dbo.loan_tape) <> 70.68 THROW 50000, 'Practice 10', 1;
-IF (SELECT SUM(arrears_balance) FROM dbo.loan_tape) <> 252649.48 THROW 50000, 'Practice 11', 1;
-SELECT @n = COUNT(*), @d = SUM(current_balance) FROM dbo.loan_tape WHERE possession_flag = 'Y';
-IF @n <> 5 OR @d <> 973577 THROW 50000, 'Practice 12', 1;
-IF (SELECT COUNT(*) FROM dbo.loan_tape WHERE borrower_income > 150000) <> 34 THROW 50000, 'Practice 13', 1;
-SELECT @s = loan_id FROM (SELECT loan_id, DENSE_RANK() OVER (ORDER BY current_balance DESC) AS r FROM dbo.loan_tape) AS x WHERE r = 2;
-IF @s <> 'ASH100772' THROW 50000, 'Practice 14', 1;
-IF EXISTS (SELECT month_end, COUNT(*) FROM dbo.loan_history WHERE status = 'Redeemed' GROUP BY month_end
-           EXCEPT SELECT * FROM (VALUES (CAST('2026-02-28' AS DATE), 11), ('2026-03-31', 12), ('2026-04-30', 13), ('2026-05-31', 10), ('2026-06-30', 11)) AS v (m, n))
-   OR (SELECT COUNT(*) FROM dbo.loan_history WHERE status = 'Redeemed') <> 57
-   THROW 50000, 'Practice 15', 1;
-IF (SELECT COUNT(*) FROM (SELECT loan_id FROM dbo.loan_history GROUP BY loan_id
-     HAVING MAX(arrears_months) = 0 AND SUM(CASE WHEN month_end = '2026-06-30' AND status = 'Active' THEN 1 ELSE 0 END) = 1) AS x) <> 984
-   THROW 50000, 'Practice 16', 1;
-IF (SELECT COUNT(*) FROM (SELECT h.loan_id FROM dbo.loan_history AS h JOIN dbo.loan_tape AS t ON t.loan_id = h.loan_id
-     WHERE t.arrears_months >= 3 GROUP BY h.loan_id HAVING MAX(h.arrears_months) >= 7) AS x) <> 7
-   THROW 50000, 'Practice 17: four at 8 months, three at 7', 1;
-SELECT @n = COUNT(*), @d = SUM(current_balance) FROM dbo.loan_tape WHERE repayment_type = 'Interest-only' AND maturity_date < '2045-01-01';
-IF @n <> 50 OR @d <> 11753499 THROW 50000, 'Practice 19', 1;
-IF EXISTS (SELECT rate_type, ROUND(AVG(1.0 * seasoning_months), 1) FROM dbo.loan_tape GROUP BY rate_type
-           EXCEPT SELECT * FROM (VALUES ('Fixed', 50.1), ('SVR', 49.0), ('Tracker', 50.8)) AS v (r, a))
-   THROW 50000, 'Practice 20', 1;
-
--- Corrections 1, 6, 8, 9
+-- Chapter 17 exercises 1 to 9 (the solutions, SQL Server values)
 SELECT @n = COUNT(*), @d = SUM(current_balance) FROM dbo.loan_tape WHERE occupancy = 'Buy-to-let';
-IF @n <> 216 OR @d <> 46245021 THROW 50000, 'Correction 1', 1;
+IF @n <> 216 OR @d <> 46245021 THROW 50000, 'Ch17 Exercise 1: buy-to-let 216 / 46,245,021', 1;
+SELECT @n = COUNT(*), @d = SUM(current_balance) FROM dbo.loan_tape WHERE occupancy = 'Owner-occupied';
+IF @n <> 984 OR @d <> 193754979 THROW 50000, 'Ch17 Exercise 1: owner-occupied 984 / 193,754,979', 1;
+SELECT @n = COUNT(*), @d = SUM(current_balance) FROM dbo.loan_tape WHERE original_ltv > 0.90;
+IF @n <> 111 OR @d <> 20410799 THROW 50000, 'Ch17 Exercise 2: 111 loans, 20,410,799', 1;
+IF (SELECT MAX(original_ltv) FROM dbo.loan_tape) <> 0.9512 THROW 50000, 'Ch17 Exercise 2: highest original LTV 95.12%', 1;
+IF (SELECT TOP 1 loan_id FROM dbo.loan_tape WHERE original_ltv > 0.90 ORDER BY current_balance DESC) <> 'ASH100499'
+   THROW 50000, 'Ch17 Exercise 2: first row ASH100499', 1;
+IF EXISTS (SELECT b, n, s FROM (SELECT CASE WHEN current_balance <= 100000 THEN 1 WHEN current_balance <= 200000 THEN 2
+              WHEN current_balance <= 300000 THEN 3 WHEN current_balance <= 500000 THEN 4 ELSE 5 END AS b,
+              COUNT(*) AS n, SUM(current_balance) AS s FROM dbo.loan_tape
+              GROUP BY CASE WHEN current_balance <= 100000 THEN 1 WHEN current_balance <= 200000 THEN 2
+              WHEN current_balance <= 300000 THEN 3 WHEN current_balance <= 500000 THEN 4 ELSE 5 END) AS x
+           EXCEPT SELECT * FROM (VALUES (1, 125, 10205405), (2, 581, 87927905), (3, 340, 82154579),
+                                        (4, 137, 49632662), (5, 17, 10079449)) AS v (b, n, s))
+   THROW 50000, 'Ch17 Exercise 3: balance-size strat', 1;
+IF EXISTS (SELECT rate_type, ROUND(SUM(interest_rate * current_balance) / SUM(current_balance), 5) FROM dbo.loan_tape GROUP BY rate_type
+           EXCEPT SELECT * FROM (VALUES ('Fixed', 0.05175), ('SVR', 0.07247), ('Tracker', 0.05245)) AS v (r, w))
+   THROW 50000, 'Ch17 Exercise 4: WA rate by rate type', 1;
+IF (SELECT ROUND(SUM(CASE WHEN loan_id = 'ASH100602' THEN 0.0537 ELSE interest_rate END * current_balance) / SUM(current_balance), 5)
+    FROM dbo.loan_tape WHERE rate_type = 'Fixed') <> 0.05112 THROW 50000, 'Ch17 Exercise 4: corrected Fixed 5.112%', 1;
+SELECT @n = COUNT(*) FROM (SELECT ROW_NUMBER() OVER (PARTITION BY region ORDER BY current_balance DESC) AS rn FROM dbo.loan_tape) AS x WHERE rn <= 3;
+IF @n <> 34 THROW 50000, 'Ch17 Exercise 5: 34 rows in SQL Server', 1;
 IF EXISTS (SELECT 1 FROM dbo.loan_tape AS t JOIN dbo.servicer_balances AS s ON s.loan_id = t.loan_id WHERE t.arrears_months <> s.arrears_months)
-   THROW 50000, 'Correction 6: no rows', 1;
+   THROW 50000, 'Ch17 Exercise 6: no rows', 1;
+IF (SELECT COUNT(*) FROM dbo.loan_tape AS t JOIN dbo.servicer_balances AS s ON s.loan_id = t.loan_id) <> 1200
+   THROW 50000, 'Ch17 Exercise 6: 1,200 rows compared', 1;
+SELECT @n = COUNT(*) FROM (SELECT region FROM dbo.loan_tape GROUP BY region) AS g;
+IF @n <> 12 THROW 50000, 'Ch17 Exercise 7: 12 rows', 1;
+IF (SELECT SUM(current_balance) FROM dbo.loan_tape WHERE region = 'London') <> 39115642
+   THROW 50000, 'Ch17 Exercise 7: London 39,115,642', 1;
+IF (SELECT TOP 1 region FROM dbo.loan_tape GROUP BY region ORDER BY SUM(current_balance) DESC) <> 'South East'
+   THROW 50000, 'Ch17 Exercise 7: South East first', 1;
 IF (SELECT COUNT(*) FROM dbo.loan_history AS a JOIN dbo.loan_history AS j ON j.loan_id = a.loan_id AND j.month_end = '2026-06-30' AND j.status = 'Active'
-    WHERE a.month_end = '2026-04-30' AND a.arrears_months = 0 AND j.arrears_months >= 2) <> 12 THROW 50000, 'Correction 8', 1;
+    WHERE a.month_end = '2026-04-30' AND a.arrears_months = 0 AND j.arrears_months >= 2) <> 12 THROW 50000, 'Ch17 Exercise 8: 12 loans', 1;
 SELECT @n = COUNT(*), @d = SUM(current_balance) FROM dbo.loan_tape
 WHERE arrears_months = 0 AND possession_flag = 'N' AND seasoning_months >= 3 AND indexed_ltv <= 0.90
   AND current_balance <= 750000 AND remaining_term_months <= 420 AND (occupancy = 'Owner-occupied' OR indexed_ltv <= 0.75);
-IF @n <> 1082 OR @d <> 215298938 THROW 50000, 'Correction 9', 1;
+IF @n <> 1082 OR @d <> 215298938 THROW 50000, 'Ch17 Exercise 9: 1,082 loans, 215,298,938', 1;
 
 -- Practice test 2, question 4 (SQL route)
 SELECT @d = ROUND(100 * SUM(CASE WHEN loan_id = 'ASH100602' THEN 0.0537 ELSE interest_rate END * current_balance) / SUM(current_balance), 3),
